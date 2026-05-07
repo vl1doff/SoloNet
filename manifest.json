@@ -1,0 +1,27 @@
+{
+  "background_color": "#1a1a2e",
+  "description": "SoloNet – автономный чат, работающий через PWA и белые списки. Created by vl1doff.The code is taken from tlk.io",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "SoloNet",
+  "orientation": "any",
+  "scope": "/SoloNet/",
+  "short_name": "SoloNet",
+  "start_url": "/SoloNet/",
+  "theme_color": "#16213e",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "id": "14882282012"
+}
