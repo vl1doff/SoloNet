@@ -1,0 +1,30 @@
+{
+  "name": "SoloNet",
+  "short_name": "SoloNet",
+  "description": "SoloNet - автономный чат для обхода белых списков. Created by vl1doff.The code is taken from tlk.io",
+  "start_url": "/SoloNet/",
+  "scope": "/SoloNet/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#1a1a2e",
+  "theme_color": "#16213e",
+  "orientation": "any",
+  "lang": "ru",
+  "dir": "ltr",
+  "id": "14882282012",
+  "categories": ["social", "chat"],
+  "icons": [
+    {
+      "src": "icon-192.jpg",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
