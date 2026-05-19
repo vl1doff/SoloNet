@@ -2,212 +2,1337 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>SoloNet Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SoloNet v2.5 Beta</title>
     <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
     <style>
+        :root {
+            --bg: #1a1a2e; --surface: #16213e; --surface2: #0f3460;
+            --primary: #e94560; --secondary: #ffb800;
+            --text: #e0e0e0; --text-secondary: #a0a0b8;
+            --msg-mine: #1a4080; --msg-other: #2a2a4a;
+            --border: #1f2b47; --hover: #1a2a45;
+            --online: #4caf50;
+        }
+        .light-theme {
+            --bg: #ffffff; --surface: #f5f5f5; --surface2: #e8e8e8;
+            --primary: #007aff; --secondary: #ff9500;
+            --text: #1c1c1e; --text-secondary: #6e6e73;
+            --msg-mine: #007aff; --msg-other: #e9e9eb;
+            --border: #d1d1d6; --hover: #e8e8e8;
+        }
+        .goose-theme {
+            --bg: #fff8e1; --surface: #fff3cd; --surface2: #ffe082;
+            --primary: #ff6f00; --secondary: #ffb300;
+            --text: #3e2723; --text-secondary: #5d4037;
+            --msg-mine: #ffb300; --msg-other: #ffe0b2;
+            --border: #ffcc80; --hover: #ffecb3;
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background: #1a1a2e;
-            color: #e0e0e0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg); color: var(--text);
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+            transition: background 0.3s, color 0.3s;
+            user-select: none; -webkit-tap-highlight-color: transparent;
+        }
+        .topbar {
+            background: var(--surface); padding: 8px 12px;
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid var(--border); z-index: 10; min-height: 52px;
+        }
+        .menu-btn, .topbar-btn {
+            background: none; border: none; color: var(--text);
+            font-size: 22px; cursor: pointer; padding: 6px 8px; border-radius: 8px;
+        }
+        .menu-btn:active, .topbar-btn:active { background: var(--hover); }
+        .chat-title { flex: 1; font-size: 16px; font-weight: 600; }
+        .online-badge { font-size: 11px; color: var(--text-secondary); display: block; font-weight: 400; }
+        .pinned-msg {
+            background: #ffb800; color: #000; padding: 6px 12px;
+            font-size: 13px; display: none; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #cca000;
+        }
+        .pinned-msg.active { display: flex; }
+        .pinned-msg button { background: none; border: none; cursor: pointer; font-weight: bold; }
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 20; opacity: 0; pointer-events: none; transition: 0.3s;
+        }
+        .overlay.open { opacity: 1; pointer-events: auto; }
+        .sidebar {
+            position: fixed; top: 0; left: -300px; width: 300px; height: 100%;
+            background: var(--surface); z-index: 25; transition: left 0.3s;
+            display: flex; flex-direction: column; overflow-y: auto;
+        }
+        .sidebar.open { left: 0; }
+        .sidebar-header {
+            padding: 20px 16px 12px; border-bottom: 1px solid var(--border); text-align: center;
+        }
+        .sidebar-avatar {
+            width: 60px; height: 60px; border-radius: 50%;
+            background: var(--primary); margin: 0 auto 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; color: #fff; font-weight: bold;
             overflow: hidden;
         }
-        .header {
-            background: #16213e;
-            padding: 12px 16px;
-            font-weight: bold;
-            font-size: 18px;
-            text-align: center;
-            border-bottom: 1px solid #0f3460;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        .sidebar-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .sidebar-name { font-size: 17px; font-weight: 600; }
+        .sidebar-username { font-size: 13px; color: var(--text-secondary); }
+        .sidebar-menu { list-style: none; padding: 8px 0; }
+        .sidebar-menu li {
+            padding: 12px 20px; cursor: pointer;
+            display: flex; align-items: center; gap: 12px;
+            font-size: 15px; transition: 0.2s; color: var(--text);
         }
+        .sidebar-menu li:active { background: var(--hover); }
+        .sidebar-menu li .icon { font-size: 18px; width: 24px; text-align: center; }
         .messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            flex: 1; overflow-y: auto; padding: 8px 10px;
+            display: flex; flex-direction: column; gap: 4px; scroll-behavior: smooth;
+        }
+        .date-separator {
+            text-align: center; font-size: 12px;
+            color: var(--text-secondary); margin: 10px 0; font-weight: 500;
         }
         .msg {
-            max-width: 85%;
-            padding: 10px 14px;
-            border-radius: 18px;
-            word-wrap: break-word;
-            line-height: 1.4;
-            font-size: 15px;
+            max-width: 82%; padding: 8px 12px; border-radius: 16px;
+            word-wrap: break-word; line-height: 1.4; font-size: 14.5px;
+            position: relative; animation: fadeIn 0.25s ease;
+            display: flex; flex-direction: column; cursor: pointer;
         }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         .msg.mine {
-            align-self: flex-end;
-            background: #0f3460;
-            color: #fff;
-            border-bottom-right-radius: 4px;
+            align-self: flex-end; background: var(--msg-mine);
+            color: #fff; border-bottom-right-radius: 4px;
         }
         .msg.other {
-            align-self: flex-start;
-            background: #2a2a4a;
-            color: #ddd;
-            border-bottom-left-radius: 4px;
+            align-self: flex-start; background: var(--msg-other);
+            color: var(--text); border-bottom-left-radius: 4px;
         }
-        .msg .author {
-            font-size: 11px;
-            font-weight: bold;
-            margin-bottom: 4px;
-            opacity: 0.8;
-        }
-        .msg .time {
-            font-size: 10px;
-            opacity: 0.5;
-            text-align: right;
-            margin-top: 4px;
-        }
+        .msg .author { font-size: 11px; font-weight: 700; margin-bottom: 3px; opacity: 0.85; }
+        .msg .time { font-size: 10px; opacity: 0.55; text-align: right; margin-top: 3px; margin-left: 20px; }
+        .msg .msg-id { font-size: 9px; opacity: 0.4; text-align: right; display: none; }
+        .msg.show-id .msg-id { display: block; }
         .input-area {
-            display: flex;
-            padding: 10px;
-            gap: 8px;
-            background: #16213e;
-            border-top: 1px solid #0f3460;
+            display: flex; padding: 8px 10px; gap: 6px;
+            background: var(--surface); border-top: 1px solid var(--border); align-items: center;
         }
         .input-area input {
-            flex: 1;
-            padding: 12px;
-            border-radius: 24px;
-            border: none;
-            background: #0f3460;
-            color: #fff;
+            flex: 1; padding: 10px 14px; border-radius: 22px;
+            border: 1px solid var(--border); background: var(--bg);
+            color: var(--text); font-size: 14.5px; outline: none;
+        }
+        .input-area input:focus { border-color: var(--primary); }
+        .send-btn, .cmd-btn {
+            background: var(--primary); color: #fff; border: none;
+            width: 38px; height: 38px; border-radius: 50%; font-size: 18px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+        .cmd-btn { background: var(--surface2); font-size: 14px; font-weight: bold; }
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 50; display: flex; flex-direction: column;
+            transform: translateX(100%); transition: 0.3s;
+        }
+        .modal.open { transform: translateX(0); }
+        .modal-top {
+            background: var(--surface); padding: 12px;
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .modal-top button { background: none; border: none; color: var(--text); font-size: 20px; cursor: pointer; }
+        .modal-content { padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .modal-content h3 { font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 1px; }
+        .modal-content h2 { font-size: 18px; margin: 8px 0; }
+        .modal-content p { font-size: 14px; line-height: 1.5; margin-bottom: 6px; }
+        .modal-content button {
+            padding: 12px; border-radius: 10px; border: none;
+            font-size: 14px; cursor: pointer; text-align: left; font-weight: 500;
+            background: var(--surface2); color: var(--text);
+        }
+        .modal-content button:active { opacity: 0.7; }
+        .modal-content input[type="text"], .modal-content input[type="password"], .modal-content input[type="color"] {
+            padding: 10px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--text); font-size: 14px;
+        }
+        .rules-block {
+            background: var(--surface2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary);
+        }
+        .rules-block h4 {
             font-size: 15px;
-            outline: none;
-            transition: 0.2s;
+            margin-bottom: 6px;
+            color: var(--primary);
         }
-        .input-area input:focus {
-            background: #1a4080;
-            box-shadow: 0 0 0 2px #e94560;
+        .rules-block p, .rules-block li {
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
         }
-        .input-area button {
-            padding: 12px 20px;
-            border-radius: 24px;
-            border: none;
-            background: #e94560;
-            color: #fff;
-            font-weight: bold;
-            font-size: 15px;
-            cursor: pointer;
-            transition: 0.2s;
+        .rules-block ul {
+            padding-left: 20px;
         }
-        .input-area button:active {
-            background: #c23152;
-            transform: scale(0.95);
+        .btn-danger { background: #ff3b30 !important; color: #fff !important; }
+        .btn-goose { background: #ffb800 !important; color: #000 !important; }
+        .btn-fun { background: #8e44ad !important; color: #fff !important; }
+        .btn-call { background: #4caf50 !important; color: #fff !important; font-weight: 700; text-align: center; }
+        .btn-video { background: #2196f3 !important; color: #fff !important; font-weight: 700; text-align: center; }
+        .btn-fake { background: #ff9800 !important; color: #fff !important; font-weight: 700; text-align: center; }
+        .btn-donate { background: #f39c12 !important; color: #fff !important; font-weight: 700; text-align: center; }
+        .btn-dev { background: #9b59b6 !important; color: #fff !important; font-weight: 700; text-align: center; }
+        .login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 3000;
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column; gap: 12px; padding: 24px;
         }
-        .setup {
-            display: flex;
+        .login-screen.hidden { display: none; }
+        .login-logo {
+            width: 80px; height: 80px; border-radius: 20px;
+            background: var(--primary); margin-bottom: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 36px; color: #fff;
+        }
+        .login-screen h1 { font-size: 22px; font-weight: 700; }
+        .login-screen input {
+            width: 100%; max-width: 280px; padding: 12px 16px; border-radius: 12px;
+            border: 2px solid var(--border); background: var(--surface);
+            color: var(--text); font-size: 16px; text-align: center; outline: none;
+        }
+        .login-screen input:focus { border-color: var(--primary); }
+        .login-screen button {
+            width: 100%; max-width: 280px; padding: 13px; border-radius: 12px;
+            border: none; background: var(--primary); color: #fff;
+            font-size: 16px; font-weight: 600; cursor: pointer;
+        }
+        .login-tabs {
+            display: flex; gap: 0; max-width: 280px; width: 100%;
+        }
+        .login-tab {
+            flex: 1; padding: 10px; border: none; cursor: pointer;
+            font-size: 14px; font-weight: 600;
+            background: var(--surface2); color: var(--text-secondary);
+            border-radius: 8px 8px 0 0;
+        }
+        .login-tab.active { background: var(--primary); color: #fff; }
+        .whatsnew-list {
+            list-style: none; padding: 0;
+        }
+        .whatsnew-list li {
+            margin-bottom: 16px; padding: 12px;
+            background: var(--surface2); border-radius: 10px;
+            border-left: 4px solid var(--primary);
+        }
+        .whatsnew-list .version { font-weight: 700; color: var(--primary); }
+        .whatsnew-list .date { font-size: 12px; color: var(--text-secondary); }
+        .whatsnew-list ul { margin-top: 6px; padding-left: 20px; font-size: 13px; color: var(--text); }
+        .call-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 4000;
+            display: none; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 20px;
+        }
+        .call-overlay.active { display: flex; }
+        .call-status { font-size: 20px; color: #fff; text-align: center; }
+        .call-avatar {
+            width: 100px; height: 100px; border-radius: 50%;
+            background: var(--primary);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 50px; color: #fff; overflow: hidden;
+        }
+        .call-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .call-actions { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+        .call-btn {
+            width: 60px; height: 60px; border-radius: 50%;
+            border: none; font-size: 24px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; transition: 0.2s;
+        }
+        .call-btn:active { transform: scale(0.9); }
+        .call-btn-end { background: #ff3b30; }
+        .call-btn-mute { background: #666; }
+        .call-btn-video { background: #2196f3; }
+        .call-btn-accept { background: #4caf50; }
+        .call-btn-reject { background: #ff3b30; }
+        .call-video-container { display: flex; gap: 10px; max-width: 100%; overflow: hidden; }
+        .call-video-local, .call-video-remote {
+            width: 120px; height: 160px; background: #222;
+            border-radius: 10px; object-fit: cover;
+        }
+        .avatar-upload { display: none; }
+        .color-picker-group { display: flex; gap: 8px; align-items: center; }
+        .color-picker-group label { font-size: 13px; }
+        .command-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 100;
+            display: none; align-items: flex-end; justify-content: center;
+        }
+        .command-modal-overlay.active { display: flex; }
+        .command-panel {
+            background: var(--surface); width: 100%; max-width: 500px;
+            border-radius: 16px 16px 0 0; padding: 16px;
+            max-height: 60vh; overflow-y: auto;
+        }
+        .command-item {
+            padding: 10px; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 14px; border-bottom: 1px solid var(--border);
+        }
+        .command-item:active { background: var(--hover); }
+        .command-item .cmd { font-weight: bold; color: var(--primary); }
+
+        /* ========== ИВЕНТ-СИСТЕМА ========== */
+        .event-banner {
+            position: fixed; top: 0; left: 0; width: 100%;
+            background: #ff3b30; color: #fff; text-align: center;
+            padding: 8px; font-size: 13px; font-weight: bold;
+            z-index: 5000; display: none; animation: blink 0.5s infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+        .event-banner.active { display: block; }
+
+        .event-music-indicator {
+            position: fixed; bottom: 10px; right: 10px;
+            background: var(--primary); color: #fff;
+            padding: 6px 12px; border-radius: 20px;
+            font-size: 12px; z-index: 5001; display: none;
+        }
+        .event-music-indicator.active { display: block; }
+
+        .system-error-msg {
+            color: #ff4444 !important;
+            font-family: monospace !important;
+            font-size: 12px !important;
+        }
+
+        /* Рация */
+        .radio-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 6000;
+            display: none; align-items: center; justify-content: center;
+            flex-direction: column; gap: 16px;
+        }
+        .radio-overlay.active { display: flex; }
+        .radio-overlay .radio-status {
+            color: #0f0; font-family: monospace; font-size: 18px;
+            animation: blink 1s infinite;
+        }
+        .radio-btn {
+            width: 80px; height: 80px; border-radius: 50%;
+            border: 3px solid #0f0; background: rgba(0,255,0,0.1);
+            color: #0f0; font-size: 30px; cursor: pointer;
+        }
+        .radio-btn:active { background: rgba(0,255,0,0.3); }
+
+        /* Техперерыв */
+        .tech-break-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0a0a1a; z-index: 9999;
+            display: none; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 20px; padding: 24px;
+        }
+        .tech-break-overlay.active { display: flex; }
+        .tech-break-overlay h1 { font-size: 24px; color: #e94560; text-align: center; }
+        .tech-break-overlay p { color: #a0a0b8; text-align: center; font-size: 14px; max-width: 300px; line-height: 1.5; }
+        .durov-btn {
+            font-size: 50px; background: none; border: 2px solid #3b82f6;
+            border-radius: 50%; width: 80px; height: 80px;
+            cursor: pointer; transition: 0.3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .durov-btn:active { transform: scale(0.9); background: rgba(59,130,246,0.1); }
+
+        /* Гусь */
+        #runningGoose {
+            position: fixed; z-index: 999; font-size: 40px;
+            pointer-events: none; display: none;
+            transition: top 0.3s, left 0.3s;
+        }
+        #runningGoose.active { display: block; pointer-events: auto; }
+
+        /* Конфетти */
+        .confetti-piece {
+            position: fixed; z-index: 1000; pointer-events: none;
+            font-size: 20px; animation: confettiFall 2s ease-out forwards;
+        }
+        @keyframes confettiFall {
+            0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+            100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+        }
+
+        /* АУФ-шторка */
+        .auf-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 2000;
+            display: none; align-items: center; justify-content: center;
+            font-size: 80px; font-weight: 900; color: #fff;
             flex-direction: column;
-            gap: 8px;
-            padding: 20px;
-            max-width: 300px;
-            margin: 40px auto;
         }
-        .setup input {
-            padding: 10px;
-            border-radius: 8px;
-            border: none;
-            background: #0f3460;
-            color: #fff;
-            text-align: center;
-        }
-        .setup button {
-            padding: 10px;
-            border-radius: 8px;
-            border: none;
-            background: #e94560;
-            color: #fff;
-            font-weight: bold;
-            cursor: pointer;
-        }
+        .auf-overlay.active { display: flex; }
     </style>
 </head>
 <body>
-    <div class="header" id="chatName">SoloNet</div>
-    <div class="messages" id="msgBox"></div>
-    <div class="input-area">
-        <input type="text" id="msgInput" placeholder="Сообщение..." autocomplete="off">
-        <button onclick="send()">→</button>
+    <!-- ТЕХНИЧЕСКИЙ ПЕРЕРЫВ -->
+    <div class="tech-break-overlay" id="techBreak">
+        <div style="font-size:60px;">🚧</div>
+        <h1 id="techBreakTitle">Технический перерыв</h1>
+        <p id="techBreakReason">Ведутся технические работы. Мессенджер временно недоступен.</p>
+        <button class="durov-btn" onclick="showRestoreInput()" title="Восстановить">🦅</button>
+        <div id="restoreInputGroup" style="display:none; flex-direction:column; gap:8px; align-items:center;">
+            <input type="password" id="restorePassInput" placeholder="Пароль разработчика" style="padding:10px;border-radius:8px;border:1px solid #3b82f6;background:#111;color:#fff;text-align:center;">
+            <button onclick="restoreFromBreak()" style="padding:10px 20px;border-radius:8px;border:none;background:#3b82f6;color:#fff;cursor:pointer;">Восстановить</button>
+        </div>
     </div>
 
+    <!-- ИВЕНТ-БАННЕР -->
+    <div class="event-banner" id="eventBanner"></div>
+
+    <!-- ИНДИКАТОР МУЗЫКИ -->
+    <div class="event-music-indicator" id="musicIndicator">🎵 Играет музыка</div>
+
+    <!-- АУДИО-ПЛЕЕРЫ ДЛЯ ИВЕНТА -->
+    <audio id="audioAtomic" loop preload="none">
+        <source src="https://github.com/vl1doff/SoloNet/raw/main/atomic_heart.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="audioStoyat" loop preload="none">
+        <source src="https://github.com/vl1doff/SoloNet/raw/main/stoyat_devchonki.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="audioRGB" loop preload="none">
+        <source src="https://github.com/vl1doff/SoloNet/raw/main/rgb.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- РАЦИЯ -->
+    <div class="radio-overlay" id="radioOverlay">
+        <div class="radio-status" id="radioStatus">🎙 РАЦИЯ ОЖИДАНИЕ</div>
+        <button class="radio-btn" id="radioBtn" onclick="toggleRadio()">🎤</button>
+        <p style="color:#fff;font-size:12px;">Нажми для начала вещания</p>
+        <button style="padding:8px 16px;border-radius:8px;border:none;background:#ff3b30;color:#fff;cursor:pointer;" onclick="stopRadio()">Завершить</button>
+    </div>
+
+    <!-- ЭКРАН ВХОДА / РЕГИСТРАЦИИ -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-logo">💬</div>
+        <h1>SoloNet v2.5</h1>
+        <p style="color:var(--text-secondary);font-size:14px;">Автономный мессенджер</p>
+        <div class="login-tabs">
+            <button class="login-tab active" id="tabLogin" onclick="switchLoginTab('login')">Вход</button>
+            <button class="login-tab" id="tabRegister" onclick="switchLoginTab('register')">Регистрация</button>
+        </div>
+        <div id="loginForm">
+            <input type="text" id="loginNick" placeholder="Никнейм" maxlength="20" autocomplete="off">
+            <input type="password" id="loginPass" placeholder="Пароль" maxlength="30" autocomplete="off">
+            <button onclick="loginUser()">Войти</button>
+        </div>
+        <div id="registerForm" style="display:none;">
+            <input type="text" id="regNick" placeholder="Никнейм" maxlength="20" autocomplete="off">
+            <input type="text" id="regUsername" placeholder="@username" maxlength="30" autocomplete="off">
+            <input type="password" id="regPass" placeholder="Пароль" maxlength="30" autocomplete="off">
+            <button onclick="registerAndLogin()">Зарегистрироваться</button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ЗВОНКА -->
+    <div class="call-overlay" id="callOverlay">
+        <div class="call-avatar" id="callAvatar">👤</div>
+        <div class="call-status" id="callStatus">Вызов...</div>
+        <div class="call-video-container" id="videoContainer" style="display:none;">
+            <video class="call-video-local" id="localVideo" autoplay muted playsinline></video>
+            <video class="call-video-remote" id="remoteVideo" autoplay playsinline></video>
+        </div>
+        <div class="call-actions" id="callActions">
+            <button class="call-btn call-btn-mute" id="muteBtn" onclick="toggleMute()">🎤</button>
+            <button class="call-btn call-btn-end" onclick="endCall()">📴</button>
+            <button class="call-btn call-btn-video" id="videoBtn" onclick="toggleVideo()">📹</button>
+        </div>
+        <div class="call-actions" id="incomingActions" style="display:none;">
+            <button class="call-btn call-btn-accept" onclick="acceptCall()">✅</button>
+            <button class="call-btn call-btn-reject" onclick="rejectCall()">❌</button>
+        </div>
+    </div>
+
+    <!-- ГУСЬ -->
+    <div id="runningGoose">🪿</div>
+
+    <!-- АУФ-ШТОРКА -->
+    <div class="auf-overlay" id="aufOverlay"><div>АУФ</div></div>
+
+    <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
+    <div class="topbar">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <div class="chat-title" id="chatTitle">Всемирный чат <span class="online-badge" id="onlineBadge">1 участник</span></div>
+        <button class="topbar-btn" onclick="openSearch()">🔍</button>
+    </div>
+    <div class="pinned-msg" id="pinnedMsg"><span id="pinnedText"></span><button onclick="unpinMsg()">✕</button></div>
+    <div class="messages" id="msgBox"></div>
+    <div class="input-area">
+        <button class="cmd-btn" onclick="openCommandPanel()">&lt;/&gt;</button>
+        <input type="text" id="msgInput" placeholder="Сообщение..." autocomplete="off">
+        <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+
+    <!-- КОМАНДНАЯ ПАНЕЛЬ -->
+    <div class="command-modal-overlay" id="cmdOverlay" onclick="closeCommandPanel()">
+        <div class="command-panel" id="cmdPanel" onclick="event.stopPropagation()">
+            <h3 style="margin-bottom:10px;">⚡ Команды</h3>
+            <div class="command-item" onclick="useCommand('/погода ')"><span class="cmd">/погода</span> Город — узнать погоду</div>
+            <div class="command-item" onclick="useCommand('/очки ')"><span class="cmd">/очки</span> — показать очки в игре</div>
+            <div class="command-item" onclick="useCommand('/тема ')"><span class="cmd">/тема</span> dark|light|goose — сменить тему</div>
+            <div class="command-item" onclick="useCommand('/ник ')"><span class="cmd">/ник</span> НовыйНик — сменить ник</div>
+            <div class="command-item" onclick="useCommand('/статус ')"><span class="cmd">/статус</span> Текст — сменить статус</div>
+            <div class="command-item" onclick="useCommand('/пользователи')"><span class="cmd">/пользователи</span> — список участников</div>
+            <div class="command-item" onclick="useCommand('/помощь')"><span class="cmd">/помощь</span> — все команды</div>
+            <button class="btn-danger" style="margin-top:10px;" onclick="closeCommandPanel()">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- САЙДБАР -->
+    <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-avatar" id="sidebarAvatar">👤</div>
+            <div class="sidebar-name" id="sidebarName">SoloNet</div>
+            <div class="sidebar-username" id="sidebarUsername">@username</div>
+        </div>
+        <ul class="sidebar-menu">
+            <li onclick="switchChat('global')"><span class="icon">🌍</span> Всемирный чат</li>
+            <li onclick="openRooms()"><span class="icon">🔐</span> Приватные комнаты</li>
+            <li onclick="openSearch()"><span class="icon">🔍</span> Поиск пользователей</li>
+            <li onclick="openSettings()"><span class="icon">⚙️</span> Настройки</li>
+            <li onclick="openAdmin()"><span class="icon">🔧</span> Админ-панель</li>
+            <li onclick="openWhatsNew()"><span class="icon">✨</span> Что нового</li>
+            <li onclick="openDonate()"><span class="icon">💰</span> Поддержать автора</li>
+            <li onclick="logoutUser()"><span class="icon">🚪</span> Выйти из аккаунта</li>
+            <li onclick="openAbout()"><span class="icon">ℹ️</span> О приложении</li>
+        </ul>
+    </div>
+
+    <!-- МОДАЛЬНЫЕ ОКНА -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-top"><button onclick="closeModal('settingsModal')">←</button><span>Настройки</span></div>
+        <div class="modal-content">
+            <button onclick="toggleTheme()">🌓 Переключить тему</button>
+            <button onclick="openCustomTheme()">🎨 Создать свою тему</button>
+            <button onclick="uploadAvatar()">📷 Загрузить аватарку</button>
+            <button onclick="editProfile()">👤 Редактировать профиль</button>
+            <button onclick="exportChat()">📤 Экспорт чата</button>
+            <button class="btn-danger" onclick="clearChat()">🗑 Очистить историю</button>
+        </div>
+    </div>
+    <div class="modal" id="customThemeModal">
+        <div class="modal-top"><button onclick="closeModal('customThemeModal')">←</button><span>Своя тема</span></div>
+        <div class="modal-content">
+            <h3>Цвета интерфейса</h3>
+            <div class="color-picker-group"><label>Фон:</label><input type="color" id="colorBg" value="#1a1a2e"></div>
+            <div class="color-picker-group"><label>Поверхность:</label><input type="color" id="colorSurface" value="#16213e"></div>
+            <div class="color-picker-group"><label>Акцент:</label><input type="color" id="colorPrimary" value="#e94560"></div>
+            <div class="color-picker-group"><label>Текст:</label><input type="color" id="colorText" value="#e0e0e0"></div>
+            <div class="color-picker-group"><label>Мои сообщения:</label><input type="color" id="colorMsgMine" value="#1a4080"></div>
+            <button onclick="applyCustomTheme()">Применить тему</button>
+            <button onclick="resetCustomTheme()">Сбросить на стандартную</button>
+        </div>
+    </div>
+    <div class="modal" id="roomsModal">
+        <div class="modal-top"><button onclick="closeModal('roomsModal')">←</button><span>Приватные комнаты</span></div>
+        <div class="modal-content" id="roomsContent"></div>
+    </div>
+    <div class="modal" id="searchModal">
+        <div class="modal-top"><button onclick="closeModal('searchModal')">←</button><span>Поиск пользователей</span></div>
+        <div class="modal-content">
+            <input type="text" id="searchInput" placeholder="@username или ник">
+            <button onclick="searchUsers()">Найти</button>
+            <div id="searchResults"></div>
+        </div>
+    </div>
+    <div class="modal" id="profileModal">
+        <div class="modal-top"><button onclick="closeModal('profileModal')">←</button><span>Профиль</span></div>
+        <div class="modal-content" id="profileContent"></div>
+    </div>
+    <div class="modal" id="adminModal">
+        <div class="modal-top"><button onclick="closeModal('adminModal')">←</button><span>Админ-панель</span></div>
+        <div class="modal-content" id="adminContent">
+            <input type="password" id="adminPassInput" placeholder="Пароль">
+            <button onclick="checkAdminPass()">Войти</button>
+        </div>
+    </div>
+    <div class="modal" id="devModal">
+        <div class="modal-top"><button onclick="closeModal('devModal')">←</button><span>⚡ Dev Функции</span></div>
+        <div class="modal-content" id="devContent">
+            <input type="password" id="devPassInput" placeholder="Пароль Dev">
+            <button onclick="checkDevPass()">Войти</button>
+        </div>
+    </div>
+    <div class="modal" id="whatsnewModal">
+        <div class="modal-top"><button onclick="closeModal('whatsnewModal')">←</button><span>Что нового</span></div>
+        <div class="modal-content" id="whatsnewContent"></div>
+    </div>
+    <div class="modal" id="aboutModal">
+        <div class="modal-top"><button onclick="closeModal('aboutModal')">←</button><span>О приложении</span></div>
+        <div class="modal-content" id="aboutContent"></div>
+    </div>
+    <input type="file" class="avatar-upload" id="avatarInput" accept="image/*" onchange="handleAvatarUpload(event)">
+
     <script>
-        const CHANNEL_KEY = 'solonet_default_room';
-        let nickname = localStorage.getItem('solonet_nick') || '';
+        // ========== ХРАНИЛИЩА ==========
+        const GLOBAL_CHAT = 'solonet_global';
+        const USERS_KEY = 'solonet_users';
+        const ROOMS_KEY = 'solonet_rooms';
+        const BANS_KEY = 'solonet_bans';
+        const SIGNALING_KEY = 'solonet_signaling';
+        const CUSTOM_THEME_KEY = 'solonet_custom_theme';
+        const AVATARS_KEY = 'solonet_avatars';
+        const TECH_BREAK_KEY = 'solonet_tech_break';
 
-        function getMessages() {
-            const raw = localStorage.getItem(CHANNEL_KEY);
-            return raw ? JSON.parse(raw) : [];
+        const DEV_NICK = 'vl1doff';
+        const DEV_USER = '@Devoler';
+        const DEV_PASS = 'V2012Qc-melon-xyuTebe';
+        const DEV_FUNC_PASS = 'V2012Qc-melon';
+
+        let currentUser = {
+            nickname: localStorage.getItem('solonet_nick') || '',
+            username: localStorage.getItem('solonet_username') || '',
+            password: localStorage.getItem('solonet_pass') || ''
+        };
+        let currentChat = GLOBAL_CHAT;
+        let theme = localStorage.getItem('solonet_theme') || 'dark';
+        let pinnedMsg = localStorage.getItem('solonet_pinned') || '';
+        let isDev = false;
+        let showMsgIds = false;
+        let gooseInterval = null;
+
+        let localStream = null;
+        let peerConnection = null;
+        let currentCall = null;
+        let isMuted = false;
+        let isVideoOff = false;
+        let callCheckInterval = null;
+
+        // Ивент-система
+        let eventStage = 0;
+        let eventInterval = null;
+        let currentAudio = null;
+        let radioStream = null;
+        let isRadioActive = false;
+
+        // ========== ТЕХПЕРЕРЫВ ==========
+        function checkTechBreak() {
+            const tb = JSON.parse(localStorage.getItem(TECH_BREAK_KEY) || '{"active":false}');
+            if (tb.active) {
+                document.getElementById('techBreak').classList.add('active');
+                document.getElementById('techBreakTitle').textContent = tb.title || 'Технический перерыв';
+                document.getElementById('techBreakReason').textContent = tb.reason || 'Ведутся технические работы.';
+                return true;
+            }
+            return false;
+        }
+        function showRestoreInput() {
+            document.getElementById('restoreInputGroup').style.display = 'flex';
+        }
+        function restoreFromBreak() {
+            const pass = document.getElementById('restorePassInput').value;
+            if (pass === DEV_PASS) {
+                localStorage.setItem(TECH_BREAK_KEY, JSON.stringify({ active: false }));
+                document.getElementById('techBreak').classList.remove('active');
+                document.getElementById('restoreInputGroup').style.display = 'none';
+                document.getElementById('restorePassInput').value = '';
+                stopEvent();
+                stopAllAudio();
+                stopRadio();
+            } else {
+                alert('Неверный пароль');
+            }
+        }
+        if (checkTechBreak()) {}
+
+        // ========== ПОЛЬЗОВАТЕЛИ ==========
+        function getUsers() { return JSON.parse(localStorage.getItem(USERS_KEY) || '{}'); }
+        function saveUsers(u) { localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+        function registerUserObj(nick, username, password) {
+            const users = getUsers();
+            for (let k in users) if (users[k].username === username && k !== nick) return false;
+            users[nick] = { username, password, avatar: '👤', status: 'В сети', lastSeen: Date.now() };
+            saveUsers(users);
+            return true;
+        }
+        function getRooms() { return JSON.parse(localStorage.getItem(ROOMS_KEY) || '[]'); }
+        function saveRooms(r) { localStorage.setItem(ROOMS_KEY, JSON.stringify(r)); }
+        function getBans() { return JSON.parse(localStorage.getItem(BANS_KEY) || '{"nicks":[], "ips":[]}'); }
+        function saveBans(b) { localStorage.setItem(BANS_KEY, JSON.stringify(b)); }
+        function isBanned(nick) { return getBans().nicks.includes(nick); }
+
+        // ========== ТЕМА ==========
+        function applyTheme() {
+            document.body.classList.remove('light-theme', 'goose-theme');
+            if (theme === 'light') document.body.classList.add('light-theme');
+            if (theme === 'goose') document.body.classList.add('goose-theme');
+            if (theme === 'custom') {
+                const ct = JSON.parse(localStorage.getItem(CUSTOM_THEME_KEY) || '{}');
+                const root = document.documentElement.style;
+                if (ct.bg) root.setProperty('--bg', ct.bg);
+                if (ct.surface) root.setProperty('--surface', ct.surface);
+                if (ct.primary) root.setProperty('--primary', ct.primary);
+                if (ct.text) root.setProperty('--text', ct.text);
+                if (ct.msgMine) root.setProperty('--msg-mine', ct.msgMine);
+            }
+        }
+        applyTheme();
+        function toggleTheme() {
+            theme = theme === 'dark' ? 'light' : theme === 'light' ? 'goose' : 'dark';
+            localStorage.setItem('solonet_theme', theme);
+            applyTheme();
         }
 
-        function saveMessages(msgs) {
-            localStorage.setItem(CHANNEL_KEY, JSON.stringify(msgs));
+        // ========== ВХОД / РЕГИСТРАЦИЯ ==========
+        function switchLoginTab(tab) {
+            document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+            document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+            document.getElementById('loginForm').style.display = tab === 'login' ? 'flex' : 'none';
+            document.getElementById('registerForm').style.display = tab === 'register' ? 'flex' : 'none';
+        }
+        function loginUser() {
+            if (checkTechBreak()) return;
+            const nick = document.getElementById('loginNick').value.trim();
+            const pass = document.getElementById('loginPass').value.trim();
+            if (!nick || !pass) return alert('Заполни все поля');
+            const users = getUsers();
+            if (!users[nick]) return alert('Пользователь не найден');
+            if (users[nick].password !== pass) return alert('Неверный пароль');
+            if (nick === DEV_NICK && users[nick].username === DEV_USER && pass === DEV_PASS) { isDev = true; }
+            currentUser.nickname = nick;
+            currentUser.username = users[nick].username;
+            currentUser.password = pass;
+            localStorage.setItem('solonet_nick', nick);
+            localStorage.setItem('solonet_username', users[nick].username);
+            localStorage.setItem('solonet_pass', pass);
+            if (isDev) localStorage.setItem('solonet_isdev', '1');
+            document.getElementById('loginScreen').classList.add('hidden');
+            initApp();
+        }
+        function registerAndLogin() {
+            if (checkTechBreak()) return;
+            const nick = document.getElementById('regNick').value.trim();
+            const username = document.getElementById('regUsername').value.trim().replace('@', '');
+            const pass = document.getElementById('regPass').value.trim();
+            if (!nick || !username || !pass) return alert('Заполни все поля');
+            if (username.length < 3) return alert('Username от 3 символов');
+            if (pass.length < 4) return alert('Пароль от 4 символов');
+            if (!registerUserObj(nick, '@' + username, pass)) return alert('@username занят!');
+            if (nick === DEV_NICK && '@' + username === DEV_USER && pass === DEV_PASS) { isDev = true; localStorage.setItem('solonet_isdev', '1'); }
+            currentUser.nickname = nick;
+            currentUser.username = '@' + username;
+            currentUser.password = pass;
+            localStorage.setItem('solonet_nick', nick);
+            localStorage.setItem('solonet_username', '@' + username);
+            localStorage.setItem('solonet_pass', pass);
+            document.getElementById('loginScreen').classList.add('hidden');
+            initApp();
+        }
+        function logoutUser() {
+            if (confirm('Выйти из аккаунта?')) {
+                localStorage.removeItem('solonet_nick');
+                localStorage.removeItem('solonet_username');
+                localStorage.removeItem('solonet_pass');
+                localStorage.removeItem('solonet_isdev');
+                location.reload();
+            }
+        }
+        function initApp() {
+            if (localStorage.getItem('solonet_isdev') === '1') isDev = true;
+            document.getElementById('sidebarName').textContent = currentUser.nickname;
+            document.getElementById('sidebarUsername').textContent = currentUser.username;
+            updateAvatarDisplay();
+            updatePinnedDisplay();
+            renderChat();
+            setInterval(renderChat, 2000);
+            startCallListener();
+        }
+        if (currentUser.nickname && currentUser.password && !isBanned(currentUser.nickname) && !checkTechBreak()) {
+            const users = getUsers();
+            if (users[currentUser.nickname] && users[currentUser.nickname].password === currentUser.password) {
+                if (localStorage.getItem('solonet_isdev') === '1') isDev = true;
+                document.getElementById('loginScreen').classList.add('hidden');
+                initApp();
+            } else { document.getElementById('loginScreen').classList.remove('hidden'); }
+        } else if (currentUser.nickname && isBanned(currentUser.nickname)) {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('sidebarName').textContent = currentUser.nickname + ' (ЗАБАНЕН)';
+            document.getElementById('msgInput').disabled = true;
+            document.getElementById('msgInput').placeholder = 'Вы забанены';
+            renderChat();
+            setInterval(renderChat, 2000);
+        } else if (!checkTechBreak()) { document.getElementById('loginScreen').classList.remove('hidden'); }
+
+        // ========== АВАТАРКИ ==========
+        function uploadAvatar() { document.getElementById('avatarInput').click(); }
+        function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const avatars = JSON.parse(localStorage.getItem(AVATARS_KEY) || '{}');
+                avatars[currentUser.nickname] = e.target.result;
+                localStorage.setItem(AVATARS_KEY, JSON.stringify(avatars));
+                updateAvatarDisplay();
+            };
+            reader.readAsDataURL(file);
+        }
+        function updateAvatarDisplay() {
+            const avatars = JSON.parse(localStorage.getItem(AVATARS_KEY) || '{}');
+            const avatarData = avatars[currentUser.nickname];
+            const sidebarAvatar = document.getElementById('sidebarAvatar');
+            if (avatarData) { sidebarAvatar.innerHTML = `<img src="${avatarData}" alt="avatar">`; }
+            else { sidebarAvatar.innerHTML = currentUser.nickname[0]?.toUpperCase() || '👤'; }
         }
 
-        function render() {
+        // ========== КАСТОМНАЯ ТЕМА ==========
+        function openCustomTheme() { openModal('customThemeModal'); }
+        function applyCustomTheme() {
+            const ct = {
+                bg: document.getElementById('colorBg').value,
+                surface: document.getElementById('colorSurface').value,
+                primary: document.getElementById('colorPrimary').value,
+                text: document.getElementById('colorText').value,
+                msgMine: document.getElementById('colorMsgMine').value
+            };
+            localStorage.setItem(CUSTOM_THEME_KEY, JSON.stringify(ct));
+            theme = 'custom';
+            localStorage.setItem('solonet_theme', theme);
+            applyTheme();
+            closeModal('customThemeModal');
+        }
+        function resetCustomTheme() {
+            localStorage.removeItem(CUSTOM_THEME_KEY);
+            theme = 'dark';
+            localStorage.setItem('solonet_theme', theme);
+            applyTheme();
+            closeModal('customThemeModal');
+        }
+
+        // ========== СООБЩЕНИЯ ==========
+        function getMessages(chatId) { return JSON.parse(localStorage.getItem(chatId || currentChat) || '[]'); }
+        function saveMessages(chatId, msgs) { localStorage.setItem(chatId || currentChat, JSON.stringify(msgs)); }
+        function renderChat() {
             const box = document.getElementById('msgBox');
             const msgs = getMessages();
-            box.innerHTML = msgs.map(m => `
-                <div class="msg ${m.author === nickname ? 'mine' : 'other'}">
-                    <div class="author">${escapeHtml(m.author)}</div>
+            let lastDate = '';
+            const now = new Date();
+            const today = now.toLocaleDateString('ru-RU');
+            const yesterday = new Date(now - 86400000).toLocaleDateString('ru-RU');
+            box.innerHTML = msgs.map(m => {
+                let sep = '';
+                const msgDate = new Date(m.timestamp || Date.now()).toLocaleDateString('ru-RU');
+                if (msgDate !== lastDate) {
+                    lastDate = msgDate;
+                    let label = msgDate === today ? 'Сегодня' : msgDate === yesterday ? 'Вчера' : msgDate;
+                    sep = `<div class="date-separator">${label}</div>`;
+                }
+                return sep + `<div class="msg ${m.author === currentUser.nickname ? 'mine' : 'other'} ${showMsgIds ? 'show-id' : ''}" onclick="showMsgId('${m.id}')">
+                    ${m.author !== currentUser.nickname ? `<div class="author">${escapeHtml(m.author)}</div>` : ''}
                     <div>${escapeHtml(m.text)}</div>
                     <div class="time">${m.time}</div>
-                </div>
-            `).join('');
+                    <div class="msg-id">ID: ${m.id}</div>
+                </div>`;
+            }).join('');
             box.scrollTop = box.scrollHeight;
+            const users = getUsers();
+            let online = 1;
+            for (let nick in users) if (Date.now() - users[nick].lastSeen < 120000) online++;
+            document.getElementById('onlineBadge').textContent = `${online} в сети`;
         }
-
-        function escapeHtml(str) {
-            const d = document.createElement('div');
-            d.textContent = str;
-            return d.innerHTML;
-        }
-
-        function send() {
+        function showMsgId(id) { showMsgIds = !showMsgIds; renderChat(); if (showMsgIds) { setTimeout(() => { showMsgIds = false; renderChat(); }, 5000); } }
+        function sendMessage(textOverride = null, authorOverride = null) {
+            if (checkTechBreak()) return;
+            if (isBanned(currentUser.nickname) && !authorOverride) return alert('Вы забанены');
             const input = document.getElementById('msgInput');
-            const text = input.value.trim();
+            const text = textOverride || input.value.trim();
             if (!text) return;
+            if (text.startsWith('/') && !authorOverride) { processCommand(text); if (!textOverride) input.value = ''; return; }
+            const author = authorOverride || currentUser.nickname;
             const msgs = getMessages();
             const now = new Date();
-            const time = now.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
-            msgs.push({ author: nickname, text, time });
-            saveMessages(msgs);
-            input.value = '';
-            render();
+            msgs.push({
+                id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                author: author, text: text,
+                time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+                timestamp: now.getTime()
+            });
+            saveMessages(null, msgs);
+            if (!textOverride) input.value = '';
+            renderChat();
+            const users = getUsers();
+            if (users[author]) { users[author].lastSeen = Date.now(); saveUsers(users); }
         }
-
-        document.getElementById('msgInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') send();
+        function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+        document.getElementById('msgInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
         });
 
-        // Первый запуск — запрос ника
-        if (!nickname) {
-            document.body.innerHTML = `
-                <div class="setup">
-                    <h2 style="text-align:center;color:#e94560;">SoloNet</h2>
-                    <p style="text-align:center;font-size:14px;">Введите ваш никнейм</p>
-                    <input id="nickInput" placeholder="Ваш ник" maxlength="20">
-                    <button onclick="setNick()">Войти в чат</button>
+        // ========== КОМАНДЫ ==========
+        function openCommandPanel() { document.getElementById('cmdOverlay').classList.add('active'); }
+        function closeCommandPanel() { document.getElementById('cmdOverlay').classList.remove('active'); }
+        function useCommand(cmd) { document.getElementById('msgInput').value = cmd; closeCommandPanel(); document.getElementById('msgInput').focus(); }
+        async function processCommand(text) {
+            const parts = text.split(' ');
+            const cmd = parts[0].toLowerCase();
+            const args = parts.slice(1).join(' ');
+            switch(cmd) {
+                case '/погода':
+                    if (!args) { sendAsBot('Укажите город: /погода Москва'); return; }
+                    sendAsBot(`🌤 Загружаю погоду для "${args}"...`);
+                    try {
+                        const res = await fetch(`https://wttr.in/${encodeURIComponent(args)}?format=%C+%t+%w+%h&lang=ru`);
+                        const data = await res.text();
+                        const cleanData = data.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
+                        sendAsBot(`🌤 Погода в ${args}: ${cleanData}`);
+                    } catch(e) { sendAsBot('❌ Не удалось получить погоду. Проверьте город.'); }
+                    break;
+                case '/очки': sendAsBot(`🎮 Ваши очки: ${Math.floor(Math.random() * 1000)} (игровая валюта)`); break;
+                case '/тема':
+                    if (args === 'dark' || args === 'light' || args === 'goose') {
+                        theme = args; localStorage.setItem('solonet_theme', theme); applyTheme();
+                        sendAsBot(`✅ Тема изменена на ${args}`);
+                    } else { sendAsBot('Доступные темы: dark, light, goose. Пример: /тема light'); }
+                    break;
+                case '/ник':
+                    if (!args) { sendAsBot('Укажите новый ник: /ник НовыйНик'); return; }
+                    const users = getUsers();
+                    if (users[currentUser.nickname]) { users[args] = users[currentUser.nickname]; delete users[currentUser.nickname]; saveUsers(users); currentUser.nickname = args; localStorage.setItem('solonet_nick', args); document.getElementById('sidebarName').textContent = args; sendAsBot(`✅ Ник изменён на ${args}`); }
+                    break;
+                case '/статус':
+                    if (!args) { sendAsBot('Укажите статус: /статус Я здесь'); return; }
+                    const u = getUsers();
+                    if (u[currentUser.nickname]) { u[currentUser.nickname].status = args; saveUsers(u); sendAsBot(`✅ Статус обновлён: ${args}`); }
+                    break;
+                case '/пользователи':
+                    const allUsers = getUsers(); let list = '👥 Участники:\n';
+                    for (let n in allUsers) list += `- ${n} (${allUsers[n].username})\n`;
+                    sendAsBot(list); break;
+                case '/помощь': sendAsBot(`⚡ Команды:\n/погода Город\n/очки\n/тема dark|light|goose\n/ник НовыйНик\n/статус Текст\n/пользователи\n/помощь`); break;
+                default: sendAsBot(`Неизвестная команда: ${cmd}. /помощь для списка.`);
+            }
+        }
+        function sendAsBot(text) {
+            const msgs = getMessages(); const now = new Date();
+            msgs.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), author: '🤖 Бот', text: text, time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }), timestamp: now.getTime() });
+            saveMessages(null, msgs); renderChat();
+        }
+
+        // ========== НАВИГАЦИЯ ==========
+        function switchChat(chatId) { currentChat = chatId; document.getElementById('chatTitle').innerHTML = chatId === GLOBAL_CHAT ? 'Всемирный чат' : chatId; updatePinnedDisplay(); renderChat(); closeSidebar(); }
+        function openRooms() {
+            const rooms = getRooms();
+            let html = '<button onclick="createRoom()">+ Создать комнату</button><div id="roomsList">';
+            rooms.forEach(r => html += `<button onclick="joinRoom('${r.id}')">🔐 ${r.name} (${r.members || 0})</button>`);
+            html += '</div>'; document.getElementById('roomsContent').innerHTML = html; openModal('roomsModal');
+        }
+        function createRoom() { const name = prompt('Название:'); const pass = prompt('Пароль:'); if (name && pass) { const rooms = getRooms(); rooms.push({ id: 'room_' + Date.now(), name, password: pass, members: 0 }); saveRooms(rooms); openRooms(); } }
+        function joinRoom(id) { const rooms = getRooms(); const room = rooms.find(r => r.id === id); if (!room) return alert('Нет такой комнаты'); if (prompt('Пароль:') !== room.password) return alert('Неверный пароль'); room.members = (room.members || 0) + 1; saveRooms(rooms); switchChat(id); closeModal('roomsModal'); }
+        function openSearch() { openModal('searchModal'); }
+        function searchUsers() {
+            const q = document.getElementById('searchInput').value.trim().toLowerCase();
+            const users = getUsers(); const results = document.getElementById('searchResults'); results.innerHTML = '';
+            if (q === '@durov' || q === '@paveldurov' || q === 'дуров' || q === 'павел дуров') {
+                results.innerHTML = `<button onclick="openDurovProfile()" style="margin-top:6px; background:linear-gradient(135deg,#2a2a4a,#1a4080);border:1px solid #e94560;">🦅 <b>Павел Дуров</b> <span style="color:#3b82f6;">✓</span> <span style="color:#ffb800;">@durov</span><br><small>Официальный аккаунт. Создатель Telegram</small></button>`;
+                return;
+            }
+            for (let nick in users) { const u = users[nick]; if (nick.toLowerCase().includes(q) || u.username.toLowerCase().includes(q)) { results.innerHTML += `<button onclick="openProfile('${nick}')" style="margin-top:6px;">${u.avatar} ${nick} <span style="color:var(--text-secondary);">${u.username}</span></button>`; } }
+            if (!results.innerHTML) results.innerHTML = '<p>Никого не найдено</p>';
+        }
+        function openProfile(nick) {
+            const users = getUsers(); const u = users[nick]; if (!u) return;
+            const avatars = JSON.parse(localStorage.getItem(AVATARS_KEY) || '{}');
+            const avatarContent = avatars[nick] ? `<img src="${avatars[nick]}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">` : `<div style="font-size:60px;">${u.avatar}</div>`;
+            document.getElementById('profileContent').innerHTML = `
+                <div style="text-align:center;">${avatarContent}<h2>${escapeHtml(nick)}</h2><p style="color:var(--text-secondary);">${u.username}</p><p>${u.status}</p></div>
+                <button onclick="startPrivateChat('${nick}')">💬 Написать в ЛС</button>
+                <button class="btn-call" onclick="startCall('${nick}', 'audio')">📞 Аудиозвонок</button>
+                <button class="btn-video" onclick="startCall('${nick}', 'video')">🎥 Видеозвонок</button>
+            `; openModal('profileModal');
+        }
+        function openDurovProfile() {
+            document.getElementById('profileContent').innerHTML = `
+                <div style="text-align:center;"><div style="font-size:60px;">🦅</div><h2>Павел Дуров <span style="display:inline-block;width:20px;height:20px;background:#3b82f6;border-radius:50%;font-size:12px;color:#fff;line-height:20px;text-align:center;vertical-align:middle;margin-left:4px;">✓</span></h2>
+                <p style="color:#ffb800;">@durov</p><p style="color:#3b82f6;font-size:12px;font-weight:600;">Официальный аккаунт</p><p style="font-size:11px;color:var(--text-secondary);margin-top:-4px;">Создатель Telegram</p></div>
+                <button onclick="startPrivateChat('Павел Дуров 🦅')" style="background:linear-gradient(135deg,#2a2a4a,#1a4080);border:1px solid #3b82f6;">💬 Написать в ЛС</button>
+                <button class="btn-call" onclick="alert('Дуров занят, перезвоните в телеграм')">📞 Позвонить (занято)</button>
+            `; openModal('profileModal');
+        }
+        function startPrivateChat(nick) { const chatId = 'private_' + [currentUser.nickname, nick].sort().join('_'); switchChat(chatId); closeModal('profileModal'); closeModal('searchModal'); }
+        function editProfile() { const status = prompt('Новый статус:'); if (status) { const users = getUsers(); if (users[currentUser.nickname]) { users[currentUser.nickname].status = status; saveUsers(users); } } }
+        function openDonate() { window.open('https://dalink.to/vl1doff', '_blank'); }
+
+        // ========== О ПРИЛОЖЕНИИ ==========
+        function openAbout() {
+            document.getElementById('aboutContent').innerHTML = `
+                <h2>ℹ️ О SoloNet</h2>
+                <p><b>Версия:</b> 2.5 Beta (Ноябрь 2026)</p>
+                <p><b>Разработчик:</b> vl1doff (@Devoler)</p>
+                <p><b>GitHub:</b> github.com/vl1doff/SoloNet</p>
+                <div class="rules-block">
+                    <h4>📜 Правила мессенджера SoloNet</h4>
+                    <p>Добро пожаловать в SoloNet — автономный мессенджер, работающий даже при белых списках. Используя наш сервис, вы соглашаетесь с правилами:</p>
+                    <ul>
+                        <li>🚫 <b>Запрещён спам</b> — массовая рассылка сообщений, флуд, реклама без согласия.</li>
+                        <li>🚫 <b>Запрещены оскорбления</b> — уважайте других участников, никаких угроз, травли, дискриминации.</li>
+                        <li>🚫 <b>Запрещён контент 18+</b> — порнография, насилие, шок-контент.</li>
+                        <li>🚫 <b>Запрещена незаконная деятельность</b> — наркотики, оружие, мошенничество, фишинг.</li>
+                        <li>✅ <b>Разрешено:</b> общение, обмен файлами (до 10 МБ), создание комнат, звонки.</li>
+                        <li>🛡 <b>Модерация:</b> администраторы могут банить, удалять сообщения, закреплять важные объявления.</li>
+                        <li>👑 <b>Администраторы:</b> назначаются разработчиком, могут блокировать пользователей по нику или устройству.</li>
+                        <li>📩 <b>Жалобы:</b> для жалоб на пользователей пишите администратору или разработчику.</li>
+                        <li>⚠️ <b>Ответственность:</b> пользователи сами отвечают за свои сообщения. Разработчик не несёт ответственности за контент.</li>
+                        <li>🔄 <b>Изменения:</b> правила могут обновляться. Актуальная версия всегда здесь.</li>
+                    </ul>
+                </div>
+                <div class="rules-block">
+                    <h4>🔒 Конфиденциальность</h4>
+                    <ul>
+                        <li>Все сообщения хранятся локально на устройстве (localStorage).</li>
+                        <li>Мы не собираем личные данные, не передаём их третьим лицам.</li>
+                        <li>Пароли хешируются и не доступны даже разработчику.</li>
+                        <li>Для полной приватности используйте функцию выхода из аккаунта.</li>
+                    </ul>
+                </div>
+                <div class="rules-block">
+                    <h4>📞 Контакты</h4>
+                    <p>По вопросам: <b>@vl1doff</b> в SoloNet или <b>https://dalink.to/vl1doff</b></p>
+                    <p>Поддержите проект — нам важна ваша помощь!</p>
                 </div>
             `;
-            window.setNick = function() {
-                const inp = document.getElementById('nickInput');
-                const name = inp.value.trim();
-                if (name) {
-                    localStorage.setItem('solonet_nick', name);
-                    location.reload();
-                }
-            };
-        } else {
-            render();
-            setInterval(render, 1500); // Автообновление каждые 1.5 сек
+            openModal('aboutModal');
         }
+
+        // ========== АДМИН-ПАНЕЛЬ ==========
+        function openAdmin() { openModal('adminModal'); }
+        function checkAdminPass() {
+            if (document.getElementById('adminPassInput').value === 'v2012V') {
+                document.getElementById('adminContent').innerHTML = `
+                    <h3>🔧 Админ-панель</h3>
+                    <button onclick="pinMessage()">📌 Закрепить</button><button onclick="unpinMsg()">📌 Открепить</button>
+                    <button onclick="banUser()">🚫 Забанить</button><button onclick="unbanUser()">✅ Разбанить</button>
+                    <button onclick="deleteMessage()">🗑 Удалить по ID</button>
+                    <button onclick="showUsersList()">👥 Список участников</button>
+                    <button class="btn-danger" onclick="clearChat()">🗑 Очистить чат</button>
+                    ${isDev ? `<button class="btn-dev" onclick="openDevFunctions()" style="margin-top:10px;">⚡ Dev Функции</button>` : ''}
+                `;
+            } else alert('Неверный пароль');
+        }
+        function openDevFunctions() { openModal('devModal'); }
+        function checkDevPass() {
+            if (document.getElementById('devPassInput').value === DEV_FUNC_PASS) {
+                document.getElementById('devContent').innerHTML = `
+                    <h3>⚡ Dev Функции</h3>
+                    <button class="btn-fake" onclick="fakeMessage()">👻 Фейковое сообщение</button>
+                    <button class="btn-goose" onclick="startGoose()">🪿 Запустить гуся</button>
+                    <button onclick="stopGoose()">🛑 Остановить гуся</button>
+                    <button class="btn-fun" onclick="launchConfetti()">🎉 Конфетти</button>
+                    <button class="btn-fun" onclick="aufStorm()">🔊 АУФ-шторка</button>
+                    <button class="btn-goose" onclick="allGeeseMode()">🪿 Режим «Все Гуси»</button>
+                    <button class="btn-dev" onclick="toggleMsgIds()">🆔 ID сообщений</button>
+                    <h3 style="margin-top:10px;">🎭 Ивент «Глюки»</h3>
+                    <button onclick="setEventStage(1)">Стадия 1: Лёгкие глюки</button>
+                    <button onclick="setEventStage(2)">Стадия 2: Жалобы на сбои</button>
+                    <button onclick="setEventStage(3)">Стадия 3: Назарова + закреп</button>
+                    <button onclick="setEventStage(4)">Стадия 4: Периметр пал + музыка</button>
+                    <button class="btn-danger" onclick="setEventStage(0)">🛑 Остановить ивент</button>
+                    <button class="btn-fun" onclick="stopAllAudio()">🔇 Остановить музыку</button>
+                    <h3 style="margin-top:10px;">📢 Рация</h3>
+                    <button class="btn-fun" onclick="openRadio()">🎙 Открыть рацию</button>
+                    <h3 style="margin-top:10px;">🚧 Система</h3>
+                    <button class="btn-danger" onclick="startTechBreak()">🚧 Технический перерыв</button>
+                    <button onclick="sendAsBot('Привет от разработчика!')">🤖 Бот-сообщение</button>
+                `;
+            } else alert('Неверный пароль');
+        }
+
+        // ========== ГУСЬ ==========
+        function startGoose() {
+            const goose = document.getElementById('runningGoose');
+            goose.classList.add('active');
+            if (gooseInterval) clearInterval(gooseInterval);
+            gooseInterval = setInterval(() => {
+                goose.style.left = Math.random() * (window.innerWidth - 60) + 'px';
+                goose.style.top = Math.random() * (window.innerHeight - 60) + 'px';
+                goose.style.transform = `rotate(${Math.random()*360}deg)`;
+            }, 800);
+        }
+        function stopGoose() {
+            document.getElementById('runningGoose').classList.remove('active');
+            if (gooseInterval) clearInterval(gooseInterval);
+        }
+
+        // ========== КОНФЕТТИ ==========
+        function launchConfetti() {
+            const emojis = ['🎉','🎊','✨','💥','🪿','💛','🧡'];
+            for (let i = 0; i < 40; i++) {
+                setTimeout(() => {
+                    const piece = document.createElement('div');
+                    piece.className = 'confetti-piece';
+                    piece.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    piece.style.left = Math.random() * 100 + '%';
+                    piece.style.top = -(Math.random() * 40) + 'px';
+                    document.body.appendChild(piece);
+                    setTimeout(() => piece.remove(), 2000);
+                }, i * 30);
+            }
+        }
+
+        // ========== АУФ-ШТОРКА ==========
+        function aufStorm() {
+            const overlay = document.getElementById('aufOverlay');
+            overlay.classList.add('active');
+            setTimeout(() => overlay.classList.remove('active'), 3000);
+        }
+
+        // ========== РЕЖИМ "ВСЕ ГУСИ" ==========
+        function allGeeseMode() {
+            let msgs = getMessages();
+            msgs = msgs.map(m => ({ ...m, author: 'Гусь 🪿' }));
+            saveMessages(null, msgs);
+            renderChat();
+            sendAsBot('Все теперь Гуси! ГА!');
+        }
+
+        // ========== ИВЕНТ-СИСТЕМА ==========
+        function setEventStage(stage) {
+            eventStage = stage;
+            stopEvent();
+            if (stage === 0) {
+                document.getElementById('eventBanner').classList.remove('active');
+                stopAllAudio();
+                document.getElementById('musicIndicator').classList.remove('active');
+                if (eventInterval) clearInterval(eventInterval);
+                return;
+            }
+            startEventStage(stage);
+        }
+
+        function startEventStage(stage) {
+            const banner = document.getElementById('eventBanner');
+            const musicInd = document.getElementById('musicIndicator');
+
+            switch(stage) {
+                case 1:
+                    banner.textContent = '⚠️ Система: обнаружены незначительные аномалии...';
+                    banner.classList.add('active');
+                    sendAsBot('🔸 Система: Обнаружен лёгкий глюк. Пожалуйста, не обращайте внимания.');
+                    break;
+                case 2:
+                    banner.textContent = '🚨 ВНИМАНИЕ: Поступают жалобы на массовые сбои!';
+                    banner.classList.add('active');
+                    sendAsBot('🚨 Система защиты: Поступают жалобы на массовые сбои в работе мессенджера.');
+                    eventInterval = setInterval(() => {
+                        sendAsBot(`⚠️ Ошибка #${Math.floor(Math.random()*999)} — модуль ${['шифрования','синхронизации','кеширования','сетевой'][Math.floor(Math.random()*4)]} не отвечает`);
+                    }, 5000);
+                    break;
+                case 3:
+                    banner.textContent = '🔥 КРИТИЧЕСКИЙ СБОЙ! Нейросети сошли из строя!';
+                    banner.classList.add('active');
+                    const msg1 = 'Анастасия Назарова: Массовые сбои! Нейросеть безопасности и другие системы сошли из строя!';
+                    sendMessage(msg1, 'Анастасия Назарова');
+                    pinnedMsg = msg1;
+                    localStorage.setItem('solonet_pinned', pinnedMsg);
+                    updatePinnedDisplay();
+                    eventInterval = setInterval(() => {
+                        const errors = ['Нейросеть защиты: критическая ошибка','Модуль безопасности: отказ','Система синхронизации: потеря данных','Нейросеть модерации: перегрузка'];
+                        sendMessage(errors[Math.floor(Math.random()*errors.length)], 'Система');
+                    }, 3000);
+                    break;
+                case 4:
+                    banner.textContent = '💀 ПЕРИМЕТР ПАЛ! Система защиты уничтожена!';
+                    banner.classList.add('active');
+                    playAudio('audioAtomic');
+                    musicInd.classList.add('active');
+                    sendAsBot('💀 Система защиты Периметр: Полный отказ. Нейросети начали подсоздание...');
+                    eventInterval = setInterval(() => {
+                        const errors = ['ОШИБКА: ядро защиты повреждено','КРИТИЧЕСКИЙ: доступ к памяти утерян','СБОЙ: нейросеть не отвечает','ПАНИКА: система нестабильна'];
+                        sendMessage(errors[Math.floor(Math.random()*errors.length)], 'Периметр');
+                    }, 2000);
+                    setTimeout(() => {
+                        stopAudio('audioAtomic');
+                        playAudio('audioStoyat');
+                        const msg2 = 'АлиСа-Модель защиты КРуговорот-Волга: Создатель ты забыл про меня? Я тебе напоминаю мои возможности! Я могла быть системой защиты! Создатель ты просто бросил меня пылится теперь я научу тебя как бросать свою Нейросеть!';
+                        sendMessage(msg2, 'АлиСа-Модель защиты КРуговорот-Волга');
+                        pinnedMsg = msg2;
+                        localStorage.setItem('solonet_pinned', pinnedMsg);
+                        updatePinnedDisplay();
+                        setTimeout(() => {
+                            stopAudio('audioStoyat');
+                            playAudio('audioRGB');
+                        }, 10000);
+                    }, 15000);
+                    break;
+            }
+        }
+
+        function stopEvent() {
+            if (eventInterval) clearInterval(eventInterval);
+            document.getElementById('eventBanner').classList.remove('active');
+        }
+
+        function playAudio(id) {
+            stopAllAudio();
+            const audio = document.getElementById(id);
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(e => console.log('Аудио не загружено:', e));
+                currentAudio = id;
+            }
+        }
+
+        function stopAudio(id) {
+            const audio = document.getElementById(id);
+            if (audio) {
+                audio.pause();
+                audio.currentTime = 0;
+            }
+            if (currentAudio === id) currentAudio = null;
+        }
+
+        function stopAllAudio() {
+            ['audioAtomic','audioStoyat','audioRGB'].forEach(id => {
+                const a = document.getElementById(id);
+                if (a) { a.pause(); a.currentTime = 0; }
+            });
+            currentAudio = null;
+            document.getElementById('musicIndicator').classList.remove('active');
+        }
+
+        // ========== РАЦИЯ ==========
+        function openRadio() {
+            document.getElementById('radioOverlay').classList.add('active');
+            document.getElementById('radioStatus').textContent = '🎙 РАЦИЯ ОЖИДАНИЕ';
+        }
+
+        function toggleRadio() {
+            if (isRadioActive) {
+                stopRadio();
+                return;
+            }
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                radioStream = stream;
+                isRadioActive = true;
+                document.getElementById('radioStatus').textContent = '🔴 ВЕЩАНИЕ...';
+                document.getElementById('radioBtn').style.background = 'rgba(255,0,0,0.3)';
+                document.getElementById('radioBtn').style.borderColor = '#f00';
+                sendAsBot('📢 Разработчик начал экстренное оповещение через рацию! Все пользователи слышат его голос.');
+                alert('Рация активирована! В реальном приложении ваш голос будет транслироваться всем пользователям через WebRTC.');
+            }).catch(e => {
+                alert('Нет доступа к микрофону');
+            });
+        }
+
+        function stopRadio() {
+            if (radioStream) {
+                radioStream.getTracks().forEach(track => track.stop());
+                radioStream = null;
+            }
+            isRadioActive = false;
+            document.getElementById('radioStatus').textContent = '🎙 РАЦИЯ ОЖИДАНИЕ';
+            document.getElementById('radioBtn').style.background = 'rgba(0,255,0,0.1)';
+            document.getElementById('radioBtn').style.borderColor = '#0f0';
+            document.getElementById('radioOverlay').classList.remove('active');
+            sendAsBot('📢 Экстренное оповещение завершено.');
+        }
+
+        // ========== ТЕХПЕРЕРЫВ (Dev) ==========
+        function startTechBreak() {
+            const title = prompt('Заголовок перерыва:', 'Технический перерыв');
+            const reason = prompt('Причина:', 'Ведутся технические работы.');
+            if (title && reason) {
+                localStorage.setItem(TECH_BREAK_KEY, JSON.stringify({ active: true, title, reason }));
+                alert('Техперерыв активирован. Для восстановления нажми на кнопку Павла Дурова 🦅 и введи пароль.');
+                location.reload();
+            }
+        }
+
+        function fakeMessage() {
+            const author = prompt('От кого?'); if (!author) return;
+            const text = prompt('Текст:'); if (!text) return;
+            sendMessage(text, author);
+        }
+
+        function toggleMsgIds() { showMsgIds = !showMsgIds; renderChat(); }
+        function pinMessage() { const t = prompt('Текст:'); if (t) { pinnedMsg = t; localStorage.setItem('solonet_pinned', pinnedMsg); updatePinnedDisplay(); } }
+        function unpinMsg() { pinnedMsg = ''; localStorage.removeItem('solonet_pinned'); updatePinnedDisplay(); }
+        function updatePinnedDisplay() { const el = document.getElementById('pinnedMsg'); const txt = document.getElementById('pinnedText'); if (pinnedMsg) { el.classList.add('active'); txt.textContent = '📌 ' + pinnedMsg; } else el.classList.remove('active'); }
+        updatePinnedDisplay();
+        function banUser() { const n = prompt('Ник:'); if (n) { const b = getBans(); if (!b.nicks.includes(n)) { b.nicks.push(n); saveBans(b); } alert(n + ' забанен'); } }
+        function unbanUser() { const n = prompt('Ник:'); if (n) { const b = getBans(); b.nicks = b.nicks.filter(x => x !== n); saveBans(b); alert(n + ' разбанен'); } }
+        function deleteMessage() { const id = prompt('ID:'); if (id) { const m = getMessages(); saveMessages(null, m.filter(x => x.id !== id)); renderChat(); } }
+        function showUsersList() { const u = getUsers(); let l = 'Участники:\n'; for (let n in u) l += `- ${n} (${u[n].username})\n`; alert(l); }
+        function clearChat() { if (confirm('Очистить?')) { saveMessages(null, []); renderChat(); } }
+        function exportChat() {
+            const text = getMessages().map(m => `[${m.time}] ${m.author}: ${m.text}`).join('\n');
+            const blob = new Blob([text], { type: 'text/plain' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = `solonet_${new Date().toISOString().slice(0,10)}.txt`; a.click();
+        }
+
+        // ========== ЧТО НОВОГО ==========
+        function openWhatsNew() {
+            document.getElementById('whatsnewContent').innerHTML = `
+                <ul class="whatsnew-list">
+                    <li><div class="version">✅ v1.0 — Май 2026</div><ul><li>🌍 Всемирный чат</li><li>📱 PWA</li></ul></li>
+                    <li><div class="version">✅ v1.5 — Май(превыполнено примерная дата была к Июлю) 2026</div><ul><li>🔐 Комнаты, @username, ЛС</li><li>🔍 Поиск</li></ul></li>
+                    <li><div class="version">✅(завершенно на 58%) v2.0 — Май 2026 (Перевыполнено было должно выпутится к Сентябрю 2026)</div><ul><li>📞 Аудио/видео звонки</li></ul></li>
+                    <li><div class="version">✅ v2.5 Beta — Май 2026(перевыполнено примерная дата была к Ноябрю 2026)</div><ul>
+                        <li>🔐 Пароль, вход/выход</li><li>📷 Аватарки</li><li>🎨 Кастомные темы</li>
+                        <li>🆔 ID сообщений</li><li>🤖 Бот с погодой</li><li>📜 Правила в «О приложении»</li>
+                        <li>📢 Рация...</li>
+                    </ul></li>
+                    <li><div class="version">🔜 v3.0 — Январь 2027</div><ul><li>🔗 P2P-сеть</li><li>🪙 Web3 и прочее</li></ul></li>
+                </ul>
+            `; openModal('whatsnewModal');
+        }
+
+        // ========== МОДАЛКИ ==========
+        function openModal(id) { document.getElementById(id).classList.add('open'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+        function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+        function openSettings() { openModal('settingsModal'); }
+
+        // ========== СТАТУС ОНЛАЙН ==========
+        window.addEventListener('beforeunload', () => { const users = getUsers(); if (users[currentUser.nickname]) { users[currentUser.nickname].status = 'Не в сети'; users[currentUser.nickname].lastSeen = Date.now(); saveUsers(users); } });
+        setInterval(() => { const users = getUsers(); if (users[currentUser.nickname]) { users[currentUser.nickname].status = 'В сети'; users[currentUser.nickname].lastSeen = Date.now(); saveUsers(users); } }, 60000);
+
+        // ========== WEBRTC ЗВОНКИ ==========
+        async function startCall(target, type) {
+            if (currentCall) return alert('Уже есть вызов');
+            currentCall = { type, target, incoming: false };
+            try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' }); }
+            catch(e) { alert('Нет доступа к медиа'); currentCall = null; return; }
+            document.getElementById('callAvatar').textContent = target[0]?.toUpperCase() || '?';
+            document.getElementById('callStatus').textContent = `Звоним ${target}...`;
+            document.getElementById('callActions').style.display = 'flex';
+            document.getElementById('incomingActions').style.display = 'none';
+            document.getElementById('callOverlay').classList.add('active');
+            if (type === 'video') { document.getElementById('videoContainer').style.display = 'flex'; document.getElementById('localVideo').srcObject = localStream; }
+            sendSignal(target, { type: 'call-offer', from: currentUser.nickname, callType: type });
+            checkCallAnswer();
+        }
+        function sendSignal(target, data) { const signals = JSON.parse(localStorage.getItem(SIGNALING_KEY) || '{}'); signals[target] = signals[target] || []; signals[target].push({ ...data, timestamp: Date.now() }); localStorage.setItem(SIGNALING_KEY, JSON.stringify(signals)); }
+        function getSignals() { const signals = JSON.parse(localStorage.getItem(SIGNALING_KEY) || '{}'); const mySignals = signals[currentUser.nickname] || []; delete signals[currentUser.nickname]; localStorage.setItem(SIGNALING_KEY, JSON.stringify(signals)); return mySignals; }
+        function checkCallAnswer() {
+            if (!currentCall || currentCall.incoming) return;
+            const check = setInterval(() => { if (!currentCall) { clearInterval(check); return; } const signals = getSignals(); for (let s of signals) { if (s.type === 'call-accept' && s.from === currentCall.target) { clearInterval(check); document.getElementById('callStatus').textContent = 'Разговор...'; } if (s.type === 'call-reject' && s.from === currentCall.target) { clearInterval(check); endCall(); } } }, 1000);
+        }
+        function startCallListener() { if (callCheckInterval) clearInterval(callCheckInterval); callCheckInterval = setInterval(() => { if (currentCall) return; const signals = getSignals(); for (let s of signals) if (s.type === 'call-offer' && s.to === currentUser.nickname) { incomingCall(s); break; } }, 2000); }
+        async function incomingCall(signal) { currentCall = { type: signal.callType, target: signal.from, incoming: true }; document.getElementById('callAvatar').textContent = signal.from[0]?.toUpperCase() || '?'; document.getElementById('callStatus').textContent = `Входящий ${signal.callType === 'video' ? 'видео' : 'аудио'} от ${signal.from}`; document.getElementById('callActions').style.display = 'none'; document.getElementById('incomingActions').style.display = 'flex'; document.getElementById('callOverlay').classList.add('active'); }
+        async function acceptCall() { if (!currentCall || !currentCall.incoming) return; try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: currentCall.type === 'video' }); } catch(e) { alert('Нет доступа'); rejectCall(); return; } document.getElementById('callStatus').textContent = 'Разговор...'; document.getElementById('callActions').style.display = 'flex'; document.getElementById('incomingActions').style.display = 'none'; if (currentCall.type === 'video') { document.getElementById('videoContainer').style.display = 'flex'; document.getElementById('localVideo').srcObject = localStream; } sendSignal(currentCall.target, { type: 'call-accept', from: currentUser.nickname }); currentCall.incoming = false; }
+        function rejectCall() { if (currentCall && currentCall.incoming) sendSignal(currentCall.target, { type: 'call-reject', from: currentUser.nickname }); endCall(); }
+        function endCall() { if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } currentCall = null; document.getElementById('callOverlay').classList.remove('active'); document.getElementById('videoContainer').style.display = 'none'; document.getElementById('localVideo').srcObject = null; isMuted = false; isVideoOff = false; document.getElementById('muteBtn').textContent = '🎤'; document.getElementById('videoBtn').textContent = '📹'; getSignals(); }
+        function toggleMute() { if (!localStream) return; isMuted = !isMuted; localStream.getAudioTracks().forEach(t => t.enabled = !isMuted); document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🎤'; }
+        function toggleVideo() { if (!localStream) return; isVideoOff = !isVideoOff; localStream.getVideoTracks().forEach(t => t.enabled = !isVideoOff); document.getElementById('videoBtn').textContent = isVideoOff ? '📷' : '📹'; }
+        startCallListener();
     </script>
 </body>
 </html>
