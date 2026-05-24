@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SoloNet v3.0 — Облачный мессенджер</title>
+    <title>SoloNet v3.1 — Облачный мессенджер</title>
     <style>
         :root {
             --bg: #1a1a2e; --surface: #16213e; --surface2: #0f3460;
@@ -29,6 +29,7 @@
             background: var(--surface); padding: 8px 12px;
             display: flex; align-items: center; gap: 10px;
             border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
         }
         .menu-btn, .topbar-btn {
             background: none; border: none; color: var(--text);
@@ -57,6 +58,7 @@
         .input-area {
             display: flex; padding: 8px 10px; gap: 6px;
             background: var(--surface); border-top: 1px solid var(--border);
+            flex-shrink: 0;
         }
         .input-area input {
             flex: 1; padding: 10px 14px; border-radius: 22px;
@@ -71,6 +73,7 @@
         }
         .send-btn:active, .cmd-btn:active { transform: scale(0.95); }
         .cmd-btn { background: var(--surface2); font-size: 14px; font-weight: bold; }
+        
         .login-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg); z-index: 3000;
@@ -109,6 +112,7 @@
             transition: 0.2s;
         }
         .login-tab.active { background: var(--primary); color: #fff; }
+        
         .sidebar {
             position: fixed; top: 0; left: -300px; width: 300px; height: 100%;
             background: var(--surface); z-index: 25; transition: left 0.3s;
@@ -137,25 +141,35 @@
         }
         .sidebar-menu li:active { background: var(--hover); }
         .sidebar-menu li .icon { font-size: 18px; width: 24px; }
+        
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); z-index: 20;
             opacity: 0; pointer-events: none; transition: 0.3s;
         }
         .overlay.open { opacity: 1; pointer-events: auto; }
+        
+        /* Модальные окна — исправлено для корректного скролла */
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg); z-index: 50;
             transform: translateX(100%); transition: 0.3s;
+            display: flex;
+            flex-direction: column;
         }
         .modal.open { transform: translateX(0); }
         .modal-top {
             background: var(--surface); padding: 12px;
             display: flex; align-items: center; gap: 10px;
             border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
         }
         .modal-top button { background: none; border: none; color: var(--text); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 8px; }
-        .modal-content { padding: 16px; flex: 1; overflow-y: auto; }
+        .modal-content {
+            padding: 16px;
+            flex: 1;
+            overflow-y: auto;
+        }
         .modal-content button {
             width: 100%; padding: 12px; margin-bottom: 8px;
             border-radius: 10px; border: none;
@@ -169,12 +183,14 @@
             border-radius: 10px; border: 1px solid var(--border);
             background: var(--bg); color: var(--text);
         }
+        
         .btn-danger { background: #ff3b30 !important; color: #fff !important; }
         .btn-dev { background: #9b59b6 !important; color: #fff !important; }
         .btn-helper { background: #00b4d8 !important; color: #fff !important; }
         .btn-success { background: #4caf50 !important; color: #fff !important; }
         .btn-warning { background: #ff9800 !important; color: #fff !important; }
         .btn-goose { background: #ffb800 !important; color: #000 !important; }
+        
         .sync-status {
             position: fixed; bottom: 10px; left: 10px;
             background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
@@ -192,6 +208,7 @@
         }
         .pinned-msg.active { display: flex; }
         hr { margin: 12px 0; border-color: var(--border); }
+        
         .event-banner {
             position: fixed; top: 0; left: 0; width: 100%;
             background: #ff3b30; color: #fff; text-align: center;
@@ -207,12 +224,14 @@
             font-size: 12px; z-index: 5001; display: none;
         }
         .event-music-indicator.active { display: block; }
+        
         #runningGoose {
             position: fixed; z-index: 999; font-size: 40px;
             pointer-events: none; display: none;
             transition: top 0.3s, left 0.3s;
         }
         #runningGoose.active { display: block; pointer-events: auto; }
+        
         .confetti-piece {
             position: fixed; z-index: 1000; pointer-events: none;
             font-size: 20px; animation: confettiFall 2s ease-out forwards;
@@ -221,6 +240,7 @@
             0% { opacity: 1; transform: translateY(0) rotate(0deg); }
             100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
         }
+        
         .auf-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 2000;
@@ -230,6 +250,7 @@
         }
         .auf-overlay.active { display: flex; animation: aufAnim 0.5s ease; }
         @keyframes aufAnim { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        
         .radio-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.8); z-index: 6000;
@@ -243,6 +264,7 @@
             color: #0f0; font-size: 30px; cursor: pointer;
         }
         .radio-btn:active { transform: scale(0.95); }
+        
         .command-modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); z-index: 100;
@@ -291,20 +313,10 @@
             margin-bottom: 12px;
             border-left: 4px solid var(--primary);
         }
-        .rules-block h4 {
-            font-size: 15px;
-            margin-bottom: 6px;
-            color: var(--primary);
-        }
-        .rules-block p, .rules-block li {
-            font-size: 13px;
-            line-height: 1.5;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
-        }
-        .rules-block ul {
-            padding-left: 20px;
-        }
+        .rules-block h4 { font-size: 15px; margin-bottom: 6px; color: var(--primary); }
+        .rules-block p, .rules-block li { font-size: 13px; line-height: 1.5; color: var(--text-secondary); margin-bottom: 4px; }
+        .rules-block ul { padding-left: 20px; }
+        
         .search-result-item {
             padding: 12px;
             background: var(--surface2);
@@ -316,6 +328,19 @@
         .durov-profile {
             background: linear-gradient(135deg, #1a4080, #2a2a4a);
             border: 1px solid var(--primary);
+        }
+        
+        /* Панель с кнопками внутри модалки — скроллится нормально */
+        .menu-group {
+            background: var(--surface2);
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+        .menu-group h4 {
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--primary);
         }
     </style>
 </head>
@@ -345,7 +370,7 @@
     <!-- ЭКРАН ВХОДА -->
     <div class="login-screen" id="loginScreen">
         <div class="login-logo">💬</div>
-        <h1>SoloNet v3.0</h1>
+        <h1>SoloNet v3.1</h1>
         <p style="color:var(--text-secondary);font-size:14px;">Облачный мессенджер</p>
         <div class="login-tabs">
             <button class="login-tab active" id="tabLoginBtn" onclick="window.switchTab('login')">Вход</button>
@@ -383,12 +408,12 @@
     <div class="command-modal-overlay" id="cmdOverlay" onclick="window.closeCommandPanel()">
         <div class="command-panel" id="cmdPanel" onclick="event.stopPropagation()">
             <h3 style="margin-bottom:10px;">⚡ Команды</h3>
-            <div class="command-item" onclick="window.useCommand('/погода ')"><span class="cmd">/погода</span> Город — узнать погоду</div>
-            <div class="command-item" onclick="window.useCommand('/очки ')"><span class="cmd">/очки</span> — показать очки</div>
-            <div class="command-item" onclick="window.useCommand('/ник ')"><span class="cmd">/ник</span> НовыйНик — сменить ник</div>
-            <div class="command-item" onclick="window.useCommand('/статус ')"><span class="cmd">/статус</span> Текст — сменить статус</div>
-            <div class="command-item" onclick="window.useCommand('/пользователи')"><span class="cmd">/пользователи</span> — список участников</div>
-            <div class="command-item" onclick="window.useCommand('/помощь')"><span class="cmd">/помощь</span> — все команды</div>
+            <div class="command-item" onclick="window.useCommand('/погода ')"><span class="cmd">/погода</span> Город</div>
+            <div class="command-item" onclick="window.useCommand('/очки ')"><span class="cmd">/очки</span> Показать очки</div>
+            <div class="command-item" onclick="window.useCommand('/ник ')"><span class="cmd">/ник</span> Сменить ник</div>
+            <div class="command-item" onclick="window.useCommand('/статус ')"><span class="cmd">/статус</span> Сменить статус</div>
+            <div class="command-item" onclick="window.useCommand('/пользователи')"><span class="cmd">/пользователи</span> Список</div>
+            <div class="command-item" onclick="window.useCommand('/помощь')"><span class="cmd">/помощь</span> Все команды</div>
             <button class="btn-danger" style="margin-top:10px;" onclick="window.closeCommandPanel()">Закрыть</button>
         </div>
     </div>
@@ -396,7 +421,7 @@
     <!-- МОДАЛКА ПОИСКА -->
     <div class="modal" id="searchModal">
         <div class="modal-top"><button onclick="window.closeModal('searchModal')">←</button><span>Поиск пользователей</span></div>
-        <div class="modal-content" id="searchContent">
+        <div class="modal-content">
             <input type="text" id="searchInput" placeholder="Введите никнейм или @username" style="width:100%; margin-bottom:12px;">
             <button onclick="window.searchUsers()">🔍 Найти</button>
             <div id="searchResults" style="margin-top:12px;"></div>
@@ -467,7 +492,7 @@
         <div class="modal-content" id="profileContent"></div>
     </div>
 
-    <div class="version-tag">SoloNet v3.0 | ⚡</div>
+    <div class="version-tag">SoloNet v3.1 | ⚡</div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -528,10 +553,7 @@
             applyTheme();
         };
         
-        window.openSettings = function() {
-            window.openModal('settingsModal');
-        };
-        
+        window.openSettings = function() { window.openModal('settingsModal'); };
         window.exportChat = async function() {
             const msgs = await getMessages();
             const text = msgs.map(m => `[${m.time}] ${m.author}: ${m.text}`).join('\n');
@@ -541,7 +563,6 @@
             a.download = `solonet_${new Date().toISOString().slice(0,10)}.txt`;
             a.click();
         };
-        
         window.clearChat = async function() {
             if (confirm('Очистить всю историю сообщений?')) {
                 await supabaseClient.from('messages').delete().eq('chat_id', currentChat);
@@ -560,78 +581,23 @@
         window.searchUsers = async function() {
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
             const resultsDiv = document.getElementById('searchResults');
-            
-            if (!query) {
-                resultsDiv.innerHTML = '<p style="color:var(--text-secondary);">Введите никнейм или username для поиска</p>';
-                return;
-            }
-            
-            // Специальный поиск Дурова
+            if (!query) { resultsDiv.innerHTML = '<p style="color:var(--text-secondary);">Введите никнейм или username</p>'; return; }
             if (query === 'дуров' || query === 'durov' || query === '@durov' || query === 'pavel durov') {
-                resultsDiv.innerHTML = `
-                    <div class="search-result-item durov-profile" onclick="window.openDurovProfile()">
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <div style="font-size:40px;">🦅</div>
-                            <div>
-                                <div><b>Павел Дуров</b> <span style="color:#3b82f6;">✓</span></div>
-                                <div style="font-size:12px; color:#ffb800;">@durov</div>
-                                <div style="font-size:11px; color:var(--text-secondary);">Создатель Telegram</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                resultsDiv.innerHTML = `<div class="search-result-item durov-profile" onclick="window.openDurovProfile()"><div style="display:flex; align-items:center; gap:12px;"><div style="font-size:40px;">🦅</div><div><div><b>Павел Дуров</b> <span style="color:#3b82f6;">✓</span></div><div style="font-size:12px; color:#ffb800;">@durov</div><div style="font-size:11px;">Создатель Telegram</div></div></div></div>`;
                 return;
             }
-            
-            const { data: users } = await supabaseClient
-                .from('users')
-                .select('*')
-                .or(`nickname.ilike.%${query}%,username.ilike.%${query}%`);
-            
-            if (!users || users.length === 0) {
-                resultsDiv.innerHTML = '<p style="color:var(--text-secondary);">Пользователи не найдены</p>';
-                return;
-            }
-            
-            resultsDiv.innerHTML = users.map(user => `
-                <div class="search-result-item" onclick="window.openUserProfile('${user.id}', '${escapeHtml(user.nickname)}', '${escapeHtml(user.username)}')">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <div style="font-size:32px;">👤</div>
-                        <div>
-                            <div><b>${escapeHtml(user.nickname)}</b></div>
-                            <div style="font-size:12px; color:var(--text-secondary);">${escapeHtml(user.username)}</div>
-                            <div style="font-size:11px;">${user.status || 'В сети'}</div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
+            const { data: users } = await supabaseClient.from('users').select('*').or(`nickname.ilike.%${query}%,username.ilike.%${query}%`);
+            if (!users || users.length === 0) { resultsDiv.innerHTML = '<p style="color:var(--text-secondary);">Пользователи не найдены</p>'; return; }
+            resultsDiv.innerHTML = users.map(user => `<div class="search-result-item" onclick="window.openUserProfile('${user.id}', '${escapeHtml(user.nickname)}', '${escapeHtml(user.username)}')"><div style="display:flex; align-items:center; gap:12px;"><div style="font-size:32px;">👤</div><div><div><b>${escapeHtml(user.nickname)}</b></div><div style="font-size:12px;">${escapeHtml(user.username)}</div><div style="font-size:11px;">${user.status || 'В сети'}</div></div></div></div>`).join('');
         };
         
         window.openUserProfile = function(userId, nickname, username) {
-            document.getElementById('profileContent').innerHTML = `
-                <div style="text-align:center;">
-                    <div style="font-size:60px;">👤</div>
-                    <h2>${escapeHtml(nickname)}</h2>
-                    <p style="color:var(--text-secondary);">${escapeHtml(username)}</p>
-                    <button class="btn-success" onclick="window.startPrivateChat('${escapeHtml(nickname)}')" style="margin-top:12px;">💬 Написать в ЛС</button>
-                    <button class="btn-warning" onclick="window.closeModal('profileModal')">Закрыть</button>
-                </div>
-            `;
+            document.getElementById('profileContent').innerHTML = `<div style="text-align:center;"><div style="font-size:60px;">👤</div><h2>${escapeHtml(nickname)}</h2><p style="color:var(--text-secondary);">${escapeHtml(username)}</p><button class="btn-success" onclick="window.startPrivateChat('${escapeHtml(nickname)}')" style="margin-top:12px;">💬 Написать в ЛС</button><button class="btn-warning" onclick="window.closeModal('profileModal')">Закрыть</button></div>`;
             window.openModal('profileModal');
         };
         
         window.openDurovProfile = function() {
-            document.getElementById('profileContent').innerHTML = `
-                <div style="text-align:center;">
-                    <div style="font-size:60px;">🦅</div>
-                    <h2>Павел Дуров <span style="color:#3b82f6;">✓</span></h2>
-                    <p style="color:#ffb800;">@durov</p>
-                    <p style="font-size:12px; color:#3b82f6;">Официальный аккаунт</p>
-                    <p style="font-size:11px; color:var(--text-secondary);">Создатель Telegram</p>
-                    <button class="btn-success" onclick="window.startPrivateChat('Павел Дуров 🦅')" style="margin-top:12px;">💬 Написать Дурову</button>
-                    <button class="btn-warning" onclick="window.closeModal('profileModal')">Закрыть</button>
-                </div>
-            `;
+            document.getElementById('profileContent').innerHTML = `<div style="text-align:center;"><div style="font-size:60px;">🦅</div><h2>Павел Дуров <span style="color:#3b82f6;">✓</span></h2><p style="color:#ffb800;">@durov</p><p style="font-size:12px; color:#3b82f6;">Официальный аккаунт</p><p style="font-size:11px;">Создатель Telegram</p><button class="btn-success" onclick="window.startPrivateChat('Павел Дуров 🦅')" style="margin-top:12px;">💬 Написать </button><button class="btn-warning" onclick="window.closeModal('profileModal')">Закрыть</button></div>`;
             window.openModal('profileModal');
         };
         
@@ -644,91 +610,32 @@
         
         // ========== О ПРИЛОЖЕНИИ ==========
         window.openAbout = function() {
-            document.getElementById('aboutContent').innerHTML = `
-                <h2>ℹ️ О SoloNet</h2>
-                <p><b>Версия:</b> 3.1 Beta (Май 23, 23:55 2026)</p>
-                <p><b>Разработчик:</b> vl1doff (@Devoler)</p>
-                <p><b>GitHub:</b> github.com/vl1doff/SoloNet</p>
-                <div class="rules-block">
-                    <h4>📜 Правила мессенджера SoloNet</h4>
-                    <ul>
-                        <li>🚫 Запрещён спам — массовая рассылка сообщений, флуд, реклама без согласия.</li>
-                        <li>🚫 Запрещены оскорбления — уважайте других участников.</li>
-                        <li>🚫 Запрещён контент 18+ — порнография, насилие, шок-контент.</li>
-                        <li>✅ Разрешено: общение, создание комнат, звонки.</li>
-                        <li>👑 Администраторы: могут блокировать пользователей.</li>
-                    </ul>
-                </div>
-                <div class="rules-block">
-                    <h4>🔒 Конфиденциальность</h4>
-                    <ul>
-                        <li>Все сообщения хранятся в облаке.</li>
-                        <li>Мы не собираем личные данные.</li>
-                    </ul>
-                </div>
-            `;
+            document.getElementById('aboutContent').innerHTML = `<h2>ℹ️ О SoloNet</h2><p><b>Версия:</b> 3.1 (23 Мая 2026)</p><p><b>Разработчик:</b> vl1doff (@Devoler)</p><p><b>GitHub:</b> github.com/vl1doff/SoloNet</p><div class="rules-block"><h4>📜 Правила</h4><ul><li>🚫 Запрещён спам</li><li>🚫 Запрещены оскорбления</li><li>🚫 Запрещён контент 18+</li><li>✅ Разрешено: общение, каналы</li></ul></div><div class="rules-block"><h4>🔒 Конфиденциальность</h4><ul><li>Сообщения в облаке</li><li>Мы не собираем личные данные</li></ul></div>`;
             window.openModal('aboutModal');
         };
         
-        // ========== ЧТО НОВОГО ==========
         window.openWhatsNew = function() {
-            document.getElementById('whatsnewContent').innerHTML = `
-                <ul class="whatsnew-list" style="list-style:none; padding:0;">
-                    <li style="margin-bottom:16px; padding:12px; background:var(--surface2); border-radius:10px; border-left:4px solid var(--primary);">
-                        <div style="font-weight:700; color:var(--primary);">✅ v3.1 beta — Май 23.05 в 23:55 2026</div>
-                        <ul style="margin-top:6px; padding-left:20px;">
-                            <li>👑 Баги исправленны</li>
-                            <li>👨‍💻 Помощник создателя</li>
-                            <li>📢 Рация,только создатель и его помошник</li>
-                            <li>📊 Система жалоб и банов</li>
-                            <li>🎨 3 темы оформления</li>
-                            <li>🔍 Поиск </li> 
-                        </ul>
-                    </li>
-                    <li style="margin-bottom:16px; padding:12px; background:var(--surface2); border-radius:10px; border-left:4px solid var(--primary);">
-                        <div style="font-weight:700; color:var(--primary);">🔜 v3.5 — Сентябрь 2026</div>
-                        <ul style="margin-top:6px; padding-left:20px;">
-                            <li>🔗 P2P-сеть</li>
-                            <li>🪙 Web3 интеграция</li>
-                        </ul>
-                    </li>
-                </ul>
-            `;
+            document.getElementById('whatsnewContent').innerHTML = `<ul style="list-style:none; padding:0;"><li style="margin-bottom:16px; padding:12px; background:var(--surface2); border-radius:10px; border-left:4px solid var(--primary);"><div style="font-weight:700; color:var(--primary);">✅ v3.1 — 23 Мая 2026</div><ul style="margin-top:6px; padding-left:20px;"><li>👑 Каналы для вспх</li><li>👨‍💻 Система Помощников</li><li>🎭 «Глюки» убранны </li><li>🪿 Фикс масштабных багов </li><li>🎉 фикс багов малых</li><li>📢 Рация (только помошник и разраб)</li><li>📊 Система жалоб</li><li>🎨 3 темы оформления</li><li>🔍 Поиск пользователей</li></li></ul></li><li style="padding:12px; background:var(--surface2); border-radius:10px; border-left:4px solid var(--primary);"><div style="font-weight:700; color:var(--primary);">🔜 v3.5 — Сентябрь 2026</div><ul style="margin-top:6px; padding-left:20px;"><li>🔗 P2P-сеть</li><li>🪙 Web3 интеграция</li></ul></li></ul>`;
             window.openModal('whatsnewModal');
         };
         
-        // ========== ПОДДЕРЖАТЬ АВТОРА ==========
         window.openDonate = function() {
-            document.getElementById('donateContent').innerHTML = `
-                <h2>💰 Поддержать автора</h2>
-                <p style="margin-bottom:16px;">Разработка SoloNet требует времени и усилий. Ваша поддержка поможет проекту развиваться!</p>
-                <div style="background: var(--surface2); padding: 16px; border-radius: 12px; margin-bottom: 12px;">
-                    <h3>🎯 Способы поддержки:</h3>
-                    <p style="margin-top:8px;">💳 DonationAlerts: <b>https://dalink.to/vl1doff</b></p>
-                    <p>⭐ GitHub Sponsor: <b>github.com/sponsors/vl1doff</b></p>
-                </div>
-                <p style="font-size:12px; color:var(--text-secondary);">Спасибо, что пользуетесь SoloNet! 💙</p>
-            `;
+            document.getElementById('donateContent').innerHTML = `<h2>💰 Поддержать автора</h2><p style="margin-bottom:16px;">Разработка SoloNet требует времени и усилий. Ваша поддержка поможет проекту развиваться!</p><div style="background: var(--surface2); padding: 16px; border-radius: 12px; margin-bottom: 12px;"><h3>🎯 Способы поддержки:</h3><p style="margin-top:8px;">💳 DonationAlerts: <b>https://dalink.to/vl1doff</b></p><p>⭐ GitHub Sponsor: <b>github.com/sponsors/vl1doff</b></p></div><p style="font-size:12px; color:var(--text-secondary);">Спасибо, что пользуетесь SoloNet! 💙</p>`;
             window.openModal('donateModal');
         };
         
-        // ========== ФУНКЦИИ ВХОДА/РЕГИСТРАЦИИ ==========
+        // ========== ВХОД/РЕГИСТРАЦИЯ ==========
         window.switchTab = function(tab) {
             const loginBtn = document.getElementById('tabLoginBtn');
             const registerBtn = document.getElementById('tabRegisterBtn');
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerForm');
-            
             if (tab === 'login') {
-                loginBtn.classList.add('active');
-                registerBtn.classList.remove('active');
-                loginForm.style.display = 'flex';
-                registerForm.style.display = 'none';
+                loginBtn.classList.add('active'); registerBtn.classList.remove('active');
+                loginForm.style.display = 'flex'; registerForm.style.display = 'none';
             } else {
-                loginBtn.classList.remove('active');
-                registerBtn.classList.add('active');
-                loginForm.style.display = 'none';
-                registerForm.style.display = 'flex';
+                loginBtn.classList.remove('active'); registerBtn.classList.add('active');
+                loginForm.style.display = 'none'; registerForm.style.display = 'flex';
             }
         };
         
@@ -736,102 +643,36 @@
             const nickname = document.getElementById('regNick').value.trim();
             let username = document.getElementById('regUsername').value.trim();
             const password = document.getElementById('regPass').value.trim();
-            
-            if (!nickname || !username || !password) {
-                alert('Заполните все поля');
-                return;
-            }
-            
+            if (!nickname || !username || !password) { alert('Заполните все поля'); return; }
             if (!username.startsWith('@')) username = '@' + username;
-            
-            const { data: existing } = await supabaseClient
-                .from('users')
-                .select('*')
-                .or(`nickname.eq.${nickname},username.eq.${username}`);
-            
-            if (existing && existing.length > 0) {
-                alert('Никнейм или username уже занят');
-                return;
-            }
-            
-            const { data, error } = await supabaseClient
-                .from('users')
-                .insert([{
-                    id: Date.now().toString(),
-                    nickname: nickname,
-                    username: username,
-                    password: btoa(password),
-                    status: 'В сети',
-                    is_admin: nickname === 'vl1doff' || username === '@Devoler',
-                    reports: 0,
-                    created_at: new Date().toISOString()
-                }])
-                .select();
-            
-            if (error) {
-                alert('Ошибка: ' + error.message);
-            } else {
-                currentUser = {
-                    id: data[0].id,
-                    nickname: data[0].nickname,
-                    username: data[0].username,
-                    isAdmin: data[0].is_admin
-                };
-                localStorage.setItem('solonet_user', JSON.stringify(currentUser));
-                document.getElementById('loginScreen').classList.add('hidden');
-                startApp();
-            }
+            const { data: existing } = await supabaseClient.from('users').select('*').or(`nickname.eq.${nickname},username.eq.${username}`);
+            if (existing && existing.length > 0) { alert('Никнейм или username уже занят'); return; }
+            const { data, error } = await supabaseClient.from('users').insert([{ id: Date.now().toString(), nickname, username, password: btoa(password), status: 'В сети', is_admin: nickname === 'vl1doff' || username === '@Devoler', reports: 0, created_at: new Date().toISOString() }]).select();
+            if (error) { alert('Ошибка: ' + error.message); }
+            else { currentUser = { id: data[0].id, nickname: data[0].nickname, username: data[0].username, isAdmin: data[0].is_admin }; localStorage.setItem('solonet_user', JSON.stringify(currentUser)); document.getElementById('loginScreen').classList.add('hidden'); startApp(); }
         };
         
         window.loginUser = async function() {
             const nickname = document.getElementById('loginNick').value.trim();
             const password = document.getElementById('loginPass').value.trim();
             const hashedPass = btoa(password);
-            
-            const { data, error } = await supabaseClient
-                .from('users')
-                .select('*')
-                .eq('nickname', nickname)
-                .eq('password', hashedPass);
-            
-            if (error || !data || data.length === 0) {
-                alert('Неверный никнейм или пароль');
-            } else {
-                const { data: bans } = await supabaseClient
-                    .from('bans')
-                    .select('*')
-                    .eq('user_id', data[0].id);
-                
-                if (bans && bans.length > 0) {
-                    alert('Вы забанены! Причина: ' + bans[0].reason);
-                    return;
-                }
-                
-                currentUser = {
-                    id: data[0].id,
-                    nickname: data[0].nickname,
-                    username: data[0].username,
-                    isAdmin: data[0].is_admin
-                };
+            const { data, error } = await supabaseClient.from('users').select('*').eq('nickname', nickname).eq('password', hashedPass);
+            if (error || !data || data.length === 0) { alert('Неверный никнейм или пароль'); }
+            else {
+                const { data: bans } = await supabaseClient.from('bans').select('*').eq('user_id', data[0].id);
+                if (bans && bans.length > 0) { alert('Вы забанены! Причина: ' + bans[0].reason); return; }
+                currentUser = { id: data[0].id, nickname: data[0].nickname, username: data[0].username, isAdmin: data[0].is_admin };
                 localStorage.setItem('solonet_user', JSON.stringify(currentUser));
                 document.getElementById('loginScreen').classList.add('hidden');
                 startApp();
             }
         };
         
-        window.logout = function() {
-            localStorage.removeItem('solonet_user');
-            location.reload();
-        };
+        window.logout = function() { localStorage.removeItem('solonet_user'); location.reload(); };
         
         // ========== СООБЩЕНИЯ ==========
         async function getMessages() {
-            const { data, error } = await supabaseClient
-                .from('messages')
-                .select('*')
-                .eq('chat_id', currentChat)
-                .order('timestamp', { ascending: true });
-            
+            const { data, error } = await supabaseClient.from('messages').select('*').eq('chat_id', currentChat).order('timestamp', { ascending: true });
             if (error) return [];
             return data || [];
         }
@@ -840,131 +681,58 @@
             const input = document.getElementById('msgInput');
             const text = textOverride || input.value.trim();
             if (!text) return;
-            
-            if (text.startsWith('/') && !authorOverride) {
-                processCommand(text);
-                if (!textOverride) input.value = '';
-                return;
-            }
-            
+            if (text.startsWith('/') && !authorOverride) { processCommand(text); if (!textOverride) input.value = ''; return; }
             const author = authorOverride || currentUser.nickname;
             const now = new Date();
-            
-            const { error } = await supabaseClient
-                .from('messages')
-                .insert([{
-                    id: Date.now().toString(36) + Math.random().toString(36),
-                    chat_id: currentChat,
-                    author: author,
-                    text: text,
-                    time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-                    timestamp: now.getTime(),
-                    user_id: currentUser.id
-                }]);
-            
-            if (error) {
-                alert('Ошибка отправки: ' + error.message);
-            } else {
-                if (!textOverride) input.value = '';
-                await renderChat();
-            }
+            const { error } = await supabaseClient.from('messages').insert([{ id: Date.now().toString(36) + Math.random().toString(36), chat_id: currentChat, author, text, time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }), timestamp: now.getTime(), user_id: currentUser.id }]);
+            if (error) { alert('Ошибка отправки: ' + error.message); }
+            else { if (!textOverride) input.value = ''; await renderChat(); }
         };
         
         async function renderChat() {
             const box = document.getElementById('msgBox');
             if (!box) return;
-            
             const msgs = await getMessages();
             let lastDate = '';
             const today = new Date().toLocaleDateString('ru-RU');
             const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('ru-RU');
-            
             box.innerHTML = msgs.map(m => {
                 let sep = '';
                 const msgDate = new Date(m.timestamp).toLocaleDateString('ru-RU');
-                if (msgDate !== lastDate) {
-                    lastDate = msgDate;
-                    let label = msgDate === today ? 'Сегодня' : msgDate === yesterday ? 'Вчера' : msgDate;
-                    sep = `<div class="date-separator">${label}</div>`;
-                }
+                if (msgDate !== lastDate) { lastDate = msgDate; let label = msgDate === today ? 'Сегодня' : msgDate === yesterday ? 'Вчера' : msgDate; sep = `<div class="date-separator">${label}</div>`; }
                 const isMine = m.author === currentUser.nickname;
-                return sep + `<div class="msg ${isMine ? 'mine' : 'other'}" onclick="window.showMessageInfo('${m.id}', '${m.user_id}')">
-                    ${!isMine ? `<div class="author">${escapeHtml(m.author)}</div>` : ''}
-                    <div>${escapeHtml(m.text)}</div>
-                    <div class="time">${m.time}</div>
-                    ${showMsgIds ? `<div style="font-size:9px;opacity:0.5;margin-top:4px;">ID: ${m.id}</div>` : ''}
-                </div>`;
+                return sep + `<div class="msg ${isMine ? 'mine' : 'other'}" onclick="window.showMessageInfo('${m.id}', '${m.user_id}')">${!isMine ? `<div class="author">${escapeHtml(m.author)}</div>` : ''}<div>${escapeHtml(m.text)}</div><div class="time">${m.time}</div>${showMsgIds ? `<div style="font-size:9px;opacity:0.5;margin-top:4px;">ID: ${m.id}</div>` : ''}</div>`;
             }).join('');
-            
             box.scrollTop = box.scrollHeight;
             document.getElementById('syncStatus').textContent = '✅ Синхронизировано';
-            setTimeout(() => {
-                if (document.getElementById('syncStatus').textContent === '✅ Синхронизировано') {
-                    document.getElementById('syncStatus').textContent = '🔄 Онлайн';
-                }
-            }, 2000);
+            setTimeout(() => { if (document.getElementById('syncStatus').textContent === '✅ Синхронизировано') document.getElementById('syncStatus').textContent = '🔄 Онлайн'; }, 2000);
         }
         
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
+        function escapeHtml(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
         
         window.showMessageInfo = function(msgId, userId) {
-            if (currentUser.isAdmin) {
-                if (confirm('Удалить это сообщение?')) {
-                    deleteMessage(msgId);
-                }
-            } else {
-                const reason = prompt('Отправить жалобу на этого пользователя? Напишите причину:');
-                if (reason && reason !== 'Cancel') {
-                    reportUser(userId, reason);
-                }
-            }
+            if (currentUser.isAdmin) { if (confirm('Удалить это сообщение?')) deleteMessage(msgId); }
+            else { const reason = prompt('Отправить жалобу? Напишите причину:'); if (reason && reason !== 'Cancel') reportUser(userId, reason); }
         };
-        
-        async function deleteMessage(msgId) {
-            const { error } = await supabaseClient.from('messages').delete().eq('id', msgId);
-            if (!error) await renderChat();
-        }
-        
-        async function reportUser(userId, reason) {
-            const { error } = await supabaseClient.from('reports').insert([{
-                id: Date.now().toString(),
-                reporter_id: currentUser.id,
-                reported_id: userId,
-                reason: reason,
-                status: 'pending',
-                created_at: new Date().toISOString()
-            }]);
-            if (!error) alert('Жалоба отправлена');
-        }
+        async function deleteMessage(msgId) { const { error } = await supabaseClient.from('messages').delete().eq('id', msgId); if (!error) await renderChat(); }
+        async function reportUser(userId, reason) { const { error } = await supabaseClient.from('reports').insert([{ id: Date.now().toString(), reporter_id: currentUser.id, reported_id: userId, reason, status: 'pending', created_at: new Date().toISOString() }]); if (!error) alert('Жалоба отправлена'); }
         
         // ========== КОМАНДЫ ==========
         async function processCommand(text) {
             const parts = text.split(' ');
             const cmd = parts[0].toLowerCase();
             const args = parts.slice(1).join(' ');
-            
             switch(cmd) {
                 case '/погода':
                     if (!args) { window.sendMessage('Укажите город: /погода Москва', '🤖 Бот'); return; }
                     window.sendMessage(`🌤 Загружаю погоду для "${args}"...`, '🤖 Бот');
-                    try {
-                        const res = await fetch(`https://wttr.in/${encodeURIComponent(args)}?format=%C+%t&lang=ru`);
-                        const data = await res.text();
-                        window.sendMessage(`🌤 Погода в ${args}: ${data.trim()}`, '🤖 Бот');
-                    } catch(e) { window.sendMessage('❌ Не удалось получить погоду', '🤖 Бот'); }
+                    try { const res = await fetch(`https://wttr.in/${encodeURIComponent(args)}?format=%C+%t&lang=ru`); const data = await res.text(); window.sendMessage(`🌤 Погода в ${args}: ${data.trim()}`, '🤖 Бот'); } catch(e) { window.sendMessage('❌ Не удалось получить погоду', '🤖 Бот'); }
                     break;
-                case '/очки':
-                    window.sendMessage(`🎮 Ваши очки: ${Math.floor(Math.random() * 1000)}`, '🤖 Бот');
-                    break;
+                case '/очки': window.sendMessage(`🎮 Ваши очки: ${Math.floor(Math.random() * 1000)}`, '🤖 Бот'); break;
                 case '/ник':
                     if (!args) { window.sendMessage('Укажите новый ник: /ник НовыйНик', '🤖 Бот'); return; }
                     await supabaseClient.from('users').update({ nickname: args }).eq('id', currentUser.id);
-                    currentUser.nickname = args;
-                    localStorage.setItem('solonet_user', JSON.stringify(currentUser));
+                    currentUser.nickname = args; localStorage.setItem('solonet_user', JSON.stringify(currentUser));
                     document.getElementById('sidebarName').textContent = args;
                     window.sendMessage(`✅ Ник изменён на ${args}`, '🤖 Бот');
                     break;
@@ -979,81 +747,34 @@
                     users.forEach(u => list += `- ${u.nickname} (${u.username})\n`);
                     window.sendMessage(list, '🤖 Бот');
                     break;
-                case '/помощь':
-                    window.sendMessage(`⚡ Команды:\n/погода Город\n/очки\n/ник НовыйНик\n/статус Текст\n/пользователи\n/помощь`, '🤖 Бот');
-                    break;
-                default:
-                    window.sendMessage(`Неизвестная команда: ${cmd}. /помощь для списка.`, '🤖 Бот');
+                case '/помощь': window.sendMessage(`⚡ Команды:\n/погода Город\n/очки\n/ник НовыйНик\n/статус Текст\n/пользователи\n/помощь`, '🤖 Бот'); break;
+                default: window.sendMessage(`Неизвестная команда: ${cmd}. /помощь для списка.`, '🤖 Бот');
             }
         }
         
-        window.openCommandPanel = function() {
-            document.getElementById('cmdOverlay').classList.add('active');
-        };
-        
-        window.closeCommandPanel = function() {
-            document.getElementById('cmdOverlay').classList.remove('active');
-        };
-        
-        window.useCommand = function(cmd) {
-            document.getElementById('msgInput').value = cmd;
-            window.closeCommandPanel();
-            document.getElementById('msgInput').focus();
-        };
+        window.openCommandPanel = function() { document.getElementById('cmdOverlay').classList.add('active'); };
+        window.closeCommandPanel = function() { document.getElementById('cmdOverlay').classList.remove('active'); };
+        window.useCommand = function(cmd) { document.getElementById('msgInput').value = cmd; window.closeCommandPanel(); document.getElementById('msgInput').focus(); };
         
         // ========== КАНАЛЫ ==========
         window.openChannels = async function() {
             const { data: channels } = await supabaseClient.from('channels').select('*');
             let html = '<h3 style="margin-bottom:12px;">📢 Все каналы</h3>';
-            
-            if (currentUser.isAdmin) {
-                html += '<button class="btn-success" onclick="window.createChannel()">➕ Создать канал</button><hr>';
-            }
-            
-            if (!channels || channels.length === 0) {
-                html += '<p style="text-align:center;color:var(--text-secondary);">Нет каналов</p>';
-            } else {
-                channels.forEach(ch => {
-                    html += `<button onclick="window.switchChat('${ch.id}')" style="display:flex; justify-content:space-between;">
-                        <span>📢 <b>${escapeHtml(ch.name)}</b></span>
-                        <span style="font-size:11px;">${escapeHtml(ch.description || '')}</span>
-                    </button>`;
-                });
-            }
-            
+            if (currentUser.isAdmin) html += '<button class="btn-success" onclick="window.createChannel()">➕ Создать канал</button><hr>';
+            if (!channels || channels.length === 0) html += '<p style="text-align:center;color:var(--text-secondary);">Нет каналов</p>';
+            else channels.forEach(ch => { html += `<button onclick="window.switchChat('${ch.id}')" style="display:flex; justify-content:space-between;"><span>📢 <b>${escapeHtml(ch.name)}</b></span><span style="font-size:11px;">${escapeHtml(ch.description || '')}</span></button>`; });
             html += '<hr><button onclick="window.switchChat(\'global\')">🌍 Вернуться в общий чат</button>';
             document.getElementById('channelsContent').innerHTML = html;
             window.openModal('channelsModal');
         };
-        
-        window.createChannel = async function() {
-            const name = prompt('Название канала:');
-            const description = prompt('Описание канала:');
-            if (name) {
-                await supabaseClient.from('channels').insert([{
-                    id: 'channel_' + Date.now(),
-                    name: name,
-                    description: description || '',
-                    owner_id: currentUser.id,
-                    created_at: new Date().toISOString()
-                }]);
-                alert('Канал создан!');
-                window.openChannels();
-            }
-        };
+        window.createChannel = async function() { const name = prompt('Название канала:'); const description = prompt('Описание:'); if (name) { await supabaseClient.from('channels').insert([{ id: 'channel_' + Date.now(), name, description: description || '', owner_id: currentUser.id, created_at: new Date().toISOString() }]); alert('Канал создан!'); window.openChannels(); } };
         
         // ========== АДМИН-ПАНЕЛЬ ==========
-        window.openAdmin = function() {
-            window.openModal('adminModal');
-        };
-        
+        window.openAdmin = function() { window.openModal('adminModal'); };
         window.checkAdminPass = function() {
             const pass = document.getElementById('adminPass').value;
-            if (pass === 'v2012V') {
-                showAdminMenu();
-            } else {
-                alert('Неверный пароль админа');
-            }
+            if (pass === 'v2012V') showAdminMenu();
+            else alert('Неверный пароль админа');
         };
         
         function showAdminMenu() {
@@ -1072,490 +793,100 @@
             `;
         }
         
-        // ========== ВХОД В DEV MENU С ПАРОЛЕМ ==========
         window.showDevMenuWithPass = function() {
             const pass = prompt('🔐 Введите пароль разработчика:');
-            if (pass === 'V2012Qc-melon-xyuTebe') {
-                showDevMenu();
-            } else {
-                alert('❌ Неверный пароль!');
-            }
+            if (pass === 'V2012Qc-melon-xyuTebe') showDevMenu();
+            else alert('❌ Неверный пароль!');
         };
         
-        // ========== ВХОД В ПОМОЩНИКА С ПАРОЛЕМ ==========
         window.showHelperMenuWithPass = function() {
             const pass = prompt('👨‍💻 Введите пароль помощника создателя:');
-            if (pass === 'Qc2012-xyuTebe-apple') {
-                showHelperMenu();
-            } else {
-                alert('❌ Неверный пароль!');
-            }
+            if (pass === 'Qc2012-xyuTebe-apple') showHelperMenu();
+            else alert('❌ Неверный пароль!');
         };
         
         function showHelperMenu() {
             document.getElementById('adminContent').innerHTML = `
                 <h3>👨‍💻 Помощник создателя</h3>
-                <p style="font-size:12px; margin-bottom:12px; color:var(--accent);">Ограниченные права для помощи в модерировании</p>
-                
-                <div style="background: var(--surface2); padding: 10px; border-radius: 10px; margin-bottom: 12px;">
-                    <h4 style="margin-bottom: 8px;">📢 РАЦИЯ</h4>
-                    <button class="btn-success" onclick="window.openRadio()">🎙 Открыть рацию</button>
-                    <button onclick="window.stopRadio()">🔇 Выключить рацию</button>
-                </div>
-                
-                <div style="background: var(--surface2); padding: 10px; border-radius: 10px; margin-bottom: 12px;">
-                    <h4 style="margin-bottom: 8px;">👻 ФЕЙКОВЫЕ СООБЩЕНИЯ</h4>
-                    <button onclick="window.fakeMessage()">✍️ Отправить от лица любого</button>
-                    <button onclick="window.sendSystemMessage()">⚠️ Системное сообщение</button>
-                    <button onclick="window.sendWarning()">⚠️ Отправить предупреждение</button>
-                </div>
-                
-                <div style="background: var(--surface2); padding: 10px; border-radius: 10px; margin-bottom: 12px;">
-                    <h4 style="margin-bottom: 8px;">🪿 РАЗВЛЕЧЕНИЯ</h4>
-                    <button class="btn-goose" onclick="window.startGoose()">🪿 Запустить гуся</button>
-                    <button onclick="window.stopGoose()">🛑 Остановить гуся</button>
-                    <button class="btn-success" onclick="window.launchConfetti()">🎉 Конфетти</button>
-                    <button class="btn-warning" onclick="window.aufStorm()">🔊 АУФ-шторка</button>
-                </div>
-                
-                <div style="background: var(--surface2); padding: 10px; border-radius: 10px; margin-bottom: 12px;">
-                    <h4 style="margin-bottom: 8px;">🔨 МОДЕРАЦИЯ (ограничено)</h4>
-                    <button onclick="window.showAllUsers()">👥 Список пользователей</button>
-                    <button onclick="window.showAllReports()">📊 Жалобы</button>
-                    <button onclick="window.showAllBans()">🚫 Список банов</button>
-                    <button onclick="window.clearGlobalChat()">🗑 Очистить общий чат</button>
-                </div>
-                
-                <hr>
-                <button class="btn-danger" onclick="showAdminMenu()">◀ Назад в админ-панель</button>
-                <button class="btn-danger" onclick="window.closeModal('adminModal')">Закрыть</button>
+                <p style="font-size:12px; margin-bottom:12px; color:var(--accent);">Ограниченные права</p>
+                <div class="menu-group"><h4>📢 РАЦИЯ</h4><button class="btn-success" onclick="window.openRadio()">🎙 Открыть рацию</button><button onclick="window.stopRadio()">🔇 Выключить рацию</button></div>
+                <div class="menu-group"><h4>👻 ФЕЙКОВЫЕ СООБЩЕНИЯ</h4><button onclick="window.fakeMessage()">✍️ Отправить от лица любого</button><button onclick="window.sendSystemMessage()">⚠️ Системное сообщение</button><button onclick="window.sendWarning()">⚠️ Отправить предупреждение</button></div>
+                <div class="menu-group"><h4>🪿 РАЗВЛЕЧЕНИЯ</h4><button class="btn-goose" onclick="window.startGoose()">🪿 Запустить гуся</button><button onclick="window.stopGoose()">🛑 Остановить гуся</button><button class="btn-success" onclick="window.launchConfetti()">🎉 Конфетти</button><button class="btn-warning" onclick="window.aufStorm()">🔊 АУФ-шторка</button></div>
+                <div class="menu-group"><h4>🔨 МОДЕРАЦИЯ</h4><button onclick="window.showAllUsers()">👥 Список пользователей</button><button onclick="window.showAllReports()">📊 Жалобы</button><button onclick="window.showAllBans()">🚫 Список банов</button><button onclick="window.clearGlobalChat()">🗑 Очистить общий чат</button></div>
+                <hr><button class="btn-danger" onclick="showAdminMenu()">◀ Назад</button><button class="btn-danger" onclick="window.closeModal('adminModal')">Закрыть</button>
             `;
         }
-        
-        window.sendWarning = async function() {
-            const userNick = prompt('Никнейм пользователя для предупреждения:');
-            const reason = prompt('Причина предупреждения:');
-            if (userNick && reason) {
-                await window.sendMessage(`⚠️ ПРЕДУПРЕЖДЕНИЕ для @${userNick}: ${reason}`, '👨‍💻 Помощник');
-            }
-        };
         
         function showDevMenu() {
             document.getElementById('adminContent').innerHTML = `
                 <h3>👑 Devoler Menu — Полный доступ</h3>
                 <p style="font-size:12px; margin-bottom:12px; color:var(--accent);">Пароль: V2012Qc-melon-xyuTebe</p>
-                
-                <div style="background: var(--surface2); padding: 10px; border-radius: 10px; margin-bottom: 12px;">
-                    <h4 style="margin-bottom: 8px;">🎭 ИВЕНТЫ</h4>
-                    <button class="btn-warning" onclick="window.setEventStage(1)">🔸 Стадия 1: Лёгкие глюки</button>
-                    <button class="btn-warning" onclick="window.setEventStage(2)">🔸 Стадия 2: Жалобы на сбои</button>
-                    <button class="btn-warning" onclick="window.setEventStage(3)">🔸 Стадия 3: Назарова + закреп</button>
-                    <button class="btn-danger" onclick="window.setEventStage(4)">🔸 Стадия 4: Периметр пал + музыка</button>
-                    <button onclick="window.setEventStage(0)">🛑 Остановить ивент</button>
-                    <button onclick="window.stopAllAudio()">🔇 Остановить музыку</button>
-                </div>
-                
-                <div style="background: var(--surface2); padding: 10px; border-radius: 10px; margin-bottom: 12px;">
-                    <h4 style="margin-bottom: 8px;">🪿 РАЗВЛЕЧЕНИЯ</h4>
-                    <button class="btn-goose" onclick="window.startGoose()">🪿 Запустить гуся</button>
-                    <button onclick="window.stopGoose()">🛑 Остановить гуся</button>
-                    <button class="btn-success" onclick="window.launchConfetti()">🎉 Конфетти</button>
-                    <button class="btn-warning" onclick="window.aufStorm()">🔊 АУФ-шторка</button>
-                    <button class="btn-goose" onclick="window.allGeeseMode()">🪿 Режим «Все Гуси»</button>
-                    <button onclick="window.toggleMsgIds()">🆔 Показать ID сообщений</button>
-                </div>
-                
-                <div style="background: var(--surface2); padding: 10px; border-radius: 10px; margin-bottom: 12px;">
-                    <h4 style="margin-bottom: 8px;">📢 РАЦИЯ</h4>
-                    <button class="btn-success" onclick="window.openRadio()">🎙 Открыть рацию</button>
-                </div>
-                
-                <div style="background: var(--surface2); padding: 10px; border-radius: 10px; margin-bottom: 12px;">
-                    <h4 style="margin-bottom: 8px;">👻 ФЕЙКОВЫЕ СООБЩЕНИЯ</h4>
-                    <button onclick="window.fakeMessage()">✍️ Отправить от лица любого</button>
-                    <button onclick="window.sendSystemMessage()">⚠️ Системное сообщение</button>
-                    <button onclick="window.sendError()">❌ Сгенерировать ошибку</button>
-                </div>
-                
-                <div style="background: var(--surface2); padding: 10px; border-radius: 10px; margin-bottom: 12px;">
-                    <h4 style="margin-bottom: 8px;">🔨 МОДЕРАЦИЯ</h4>
-                    <button onclick="window.showAllUsers()">👥 Все пользователи</button>
-                    <button onclick="window.showAllBans()">🚫 Список банов</button>
-                    <button onclick="window.banUserById()">🔨 Забанить по ID</button>
-                    <button onclick="window.unbanUser()">✅ Разбанить</button>
-                    <button onclick="window.showAllReports()">📊 Жалобы</button>
-                    <button onclick="window.deleteChannelById()">📢 Удалить канал по ID</button>
-                    <button onclick="window.clearGlobalChat()">🗑 Очистить общий чат</button>
-                    <button class="btn-danger" onclick="window.deleteAllMessages()">💣 Удалить ВСЕ сообщения</button>
-                </div>
-                
-                <hr>
-                <button class="btn-danger" onclick="showAdminMenu()">◀ Назад в админ-панель</button>
-                <button class="btn-danger" onclick="window.closeModal('adminModal')">Закрыть</button>
+                <div class="menu-group"><h4>🎭 ИВЕНТЫ</h4><button class="btn-warning" onclick="window.setEventStage(1)">🔸 Стадия 1</button><button class="btn-warning" onclick="window.setEventStage(2)">🔸 Стадия 2</button><button class="btn-warning" onclick="window.setEventStage(3)">🔸 Стадия 3</button><button class="btn-danger" onclick="window.setEventStage(4)">🔸 Стадия 4</button><button onclick="window.setEventStage(0)">🛑 Остановить ивент</button><button onclick="window.stopAllAudio()">🔇 Остановить музыку</button></div>
+                <div class="menu-group"><h4>🪿 РАЗВЛЕЧЕНИЯ</h4><button class="btn-goose" onclick="window.startGoose()">🪿 Запустить гуся</button><button onclick="window.stopGoose()">🛑 Остановить гуся</button><button class="btn-success" onclick="window.launchConfetti()">🎉 Конфетти</button><button class="btn-warning" onclick="window.aufStorm()">🔊 АУФ-шторка</button><button class="btn-goose" onclick="window.allGeeseMode()">🪿 Режим «Все Гуси»</button><button onclick="window.toggleMsgIds()">🆔 Показать ID</button></div>
+                <div class="menu-group"><h4>📢 РАЦИЯ</h4><button class="btn-success" onclick="window.openRadio()">🎙 Открыть рацию</button></div>
+                <div class="menu-group"><h4>👻 ФЕЙКОВЫЕ СООБЩЕНИЯ</h4><button onclick="window.fakeMessage()">✍️ От лица любого</button><button onclick="window.sendSystemMessage()">⚠️ Системное</button><button onclick="window.sendError()">❌ Ошибка</button></div>
+                <div class="menu-group"><h4>🔨 МОДЕРАЦИЯ</h4><button onclick="window.showAllUsers()">👥 Все пользователи</button><button onclick="window.showAllBans()">🚫 Список банов</button><button onclick="window.banUserById()">🔨 Забанить по ID</button><button onclick="window.unbanUser()">✅ Разбанить</button><button onclick="window.showAllReports()">📊 Жалобы</button><button onclick="window.deleteChannelById()">📢 Удалить канал</button><button onclick="window.clearGlobalChat()">🗑 Очистить общий чат</button><button class="btn-danger" onclick="window.deleteAllMessages()">💣 Удалить ВСЕ сообщения</button></div>
+                <hr><button class="btn-danger" onclick="showAdminMenu()">◀ Назад</button><button class="btn-danger" onclick="window.closeModal('adminModal')">Закрыть</button>
             `;
         }
         
-        window.showAllUsers = async function() {
-            const { data: users } = await supabaseClient.from('users').select('*');
-            let list = '👥 Пользователи:\n\n';
-            users.forEach(u => {
-                list += `${u.nickname} (${u.username})\n   ID: ${u.id}\n   Админ: ${u.is_admin ? 'Да' : 'Нет'}\n\n`;
-            });
-            alert(list);
-        };
-        
-        window.showAllReports = async function() {
-            const { data: reports } = await supabaseClient.from('reports').select('*').eq('status', 'pending');
-            if (!reports || reports.length === 0) {
-                alert('Нет новых жалоб');
-                return;
-            }
-            let list = '📊 Жалобы:\n\n';
-            for (const r of reports) {
-                const { data: user } = await supabaseClient.from('users').select('nickname').eq('id', r.reported_id).single();
-                list += `👤 ${user?.nickname || r.reported_id}\n   Причина: ${r.reason}\n   ID: ${r.reported_id}\n\n`;
-            }
-            alert(list);
-            for (const r of reports) {
-                await supabaseClient.from('reports').update({ status: 'viewed' }).eq('id', r.id);
-            }
-        };
-        
-        window.showAllBans = async function() {
-            const { data: bans } = await supabaseClient.from('bans').select('*');
-            if (!bans || bans.length === 0) {
-                alert('Нет забаненных');
-                return;
-            }
-            let list = '🚫 Забаненные:\n\n';
-            for (const b of bans) {
-                const { data: user } = await supabaseClient.from('users').select('nickname').eq('id', b.user_id).single();
-                list += `${user?.nickname || b.user_id}\n   Причина: ${b.reason}\n   ID: ${b.user_id}\n\n`;
-            }
-            alert(list);
-        };
-        
-        window.banUserById = async function() {
-            const userId = prompt('Введите ID пользователя для бана:');
-            if (userId) {
-                const reason = prompt('Причина бана:');
-                if (reason) {
-                    await supabaseClient.from('bans').insert([{
-                        user_id: userId,
-                        reason: reason,
-                        banned_by: currentUser.id,
-                        created_at: new Date().toISOString()
-                    }]);
-                    alert('Пользователь забанен');
-                }
-            }
-        };
-        
-        window.unbanUser = async function() {
-            const userId = prompt('Введите ID пользователя для разбана:');
-            if (userId) {
-                await supabaseClient.from('bans').delete().eq('user_id', userId);
-                alert('Пользователь разбанен');
-            }
-        };
-        
-        window.deleteLastMessage = async function() {
-            const { data: messages } = await supabaseClient
-                .from('messages')
-                .select('*')
-                .eq('chat_id', currentChat)
-                .order('timestamp', { ascending: false })
-                .limit(1);
-            if (messages && messages.length > 0) {
-                await supabaseClient.from('messages').delete().eq('id', messages[0].id);
-                await renderChat();
-            }
-        };
-        
-        window.deleteChannelById = async function() {
-            const channelId = prompt('Введите ID канала для удаления:');
-            if (channelId) {
-                await supabaseClient.from('messages').delete().eq('chat_id', channelId);
-                await supabaseClient.from('channels').delete().eq('id', channelId);
-                alert('Канал удалён');
-                if (currentChat === channelId) window.switchChat('global');
-            }
-        };
-        
-        window.clearGlobalChat = async function() {
-            if (confirm('Очистить весь общий чат?')) {
-                await supabaseClient.from('messages').delete().eq('chat_id', 'global');
-                await renderChat();
-            }
-        };
-        
-        window.deleteAllMessages = async function() {
-            if (confirm('💣 УДАЛИТЬ ВСЕ СООБЩЕНИЯ ВО ВСЕХ ЧАТАХ? Это действие необратимо!')) {
-                await supabaseClient.from('messages').delete().neq('id', '0');
-                await renderChat();
-            }
-        };
+        window.showAllUsers = async function() { const { data: users } = await supabaseClient.from('users').select('*'); let list = '👥 Пользователи:\n\n'; users.forEach(u => { list += `${u.nickname} (${u.username})\n   ID: ${u.id}\n   Админ: ${u.is_admin ? 'Да' : 'Нет'}\n\n`; }); alert(list); };
+        window.showAllReports = async function() { const { data: reports } = await supabaseClient.from('reports').select('*').eq('status', 'pending'); if (!reports || reports.length === 0) { alert('Нет новых жалоб'); return; } let list = '📊 Жалобы:\n\n'; for (const r of reports) { const { data: user } = await supabaseClient.from('users').select('nickname').eq('id', r.reported_id).single(); list += `👤 ${user?.nickname || r.reported_id}\n   Причина: ${r.reason}\n   ID: ${r.reported_id}\n\n`; } alert(list); for (const r of reports) { await supabaseClient.from('reports').update({ status: 'viewed' }).eq('id', r.id); } };
+        window.showAllBans = async function() { const { data: bans } = await supabaseClient.from('bans').select('*'); if (!bans || bans.length === 0) { alert('Нет забаненных'); return; } let list = '🚫 Забаненные:\n\n'; for (const b of bans) { const { data: user } = await supabaseClient.from('users').select('nickname').eq('id', b.user_id).single(); list += `${user?.nickname || b.user_id}\n   Причина: ${b.reason}\n   ID: ${b.user_id}\n\n`; } alert(list); };
+        window.banUserById = async function() { const userId = prompt('Введите ID пользователя для бана:'); if (userId) { const reason = prompt('Причина бана:'); if (reason) { await supabaseClient.from('bans').insert([{ user_id: userId, reason, banned_by: currentUser.id, created_at: new Date().toISOString() }]); alert('Пользователь забанен'); } } };
+        window.unbanUser = async function() { const userId = prompt('Введите ID пользователя для разбана:'); if (userId) { await supabaseClient.from('bans').delete().eq('user_id', userId); alert('Пользователь разбанен'); } };
+        window.deleteLastMessage = async function() { const { data: messages } = await supabaseClient.from('messages').select('*').eq('chat_id', currentChat).order('timestamp', { ascending: false }).limit(1); if (messages && messages.length > 0) { await supabaseClient.from('messages').delete().eq('id', messages[0].id); await renderChat(); } };
+        window.deleteChannelById = async function() { const channelId = prompt('Введите ID канала для удаления:'); if (channelId) { await supabaseClient.from('messages').delete().eq('chat_id', channelId); await supabaseClient.from('channels').delete().eq('id', channelId); alert('Канал удалён'); if (currentChat === channelId) window.switchChat('global'); } };
+        window.clearGlobalChat = async function() { if (confirm('Очистить весь общий чат?')) { await supabaseClient.from('messages').delete().eq('chat_id', 'global'); await renderChat(); } };
+        window.deleteAllMessages = async function() { if (confirm('💣 УДАЛИТЬ ВСЕ СООБЩЕНИЯ?')) { await supabaseClient.from('messages').delete().neq('id', '0'); await renderChat(); } };
         
         // ========== DEV ФУНКЦИИ ==========
-        window.toggleMsgIds = function() {
-            showMsgIds = !showMsgIds;
-            renderChat();
-        };
-        
-        window.fakeMessage = async function() {
-            const author = prompt('От чьего имени отправить?');
-            const text = prompt('Текст сообщения:');
-            if (author && text) {
-                await window.sendMessage(text, author);
-            }
-        };
-        
-        window.sendSystemMessage = async function() {
-            const text = prompt('Текст системного сообщения:');
-            if (text) {
-                await window.sendMessage('🔔 ' + text, '⚙️ Система');
-            }
-        };
-        
-        window.sendError = async function() {
-            await window.sendMessage('⚠️ Ошибка #' + Math.floor(Math.random() * 9999) + ': Непредвиденная ошибка модуля синхронизации', '🚨 Система ошибок');
-        };
-        
-        window.pinMessage = function() {
-            const text = prompt('Текст для закрепления:');
-            if (text) {
-                pinnedMsg = text;
-                localStorage.setItem('solonet_pinned', pinnedMsg);
-                updatePinnedDisplay();
-            }
-        };
-        
-        window.unpinMsg = function() {
-            pinnedMsg = '';
-            localStorage.removeItem('solonet_pinned');
-            updatePinnedDisplay();
-        };
-        
-        function updatePinnedDisplay() {
-            const el = document.getElementById('pinnedMsg');
-            const txt = document.getElementById('pinnedText');
-            if (pinnedMsg) {
-                el.classList.add('active');
-                txt.textContent = '📌 ' + pinnedMsg;
-            } else {
-                el.classList.remove('active');
-            }
-        }
+        window.toggleMsgIds = function() { showMsgIds = !showMsgIds; renderChat(); };
+        window.fakeMessage = async function() { const author = prompt('От чьего имени?'); const text = prompt('Текст:'); if (author && text) await window.sendMessage(text, author); };
+        window.sendSystemMessage = async function() { const text = prompt('Текст системного сообщения:'); if (text) await window.sendMessage('🔔 ' + text, '⚙️ Система'); };
+        window.sendError = async function() { await window.sendMessage('⚠️ Ошибка #' + Math.floor(Math.random() * 9999) + ': Непредвиденная ошибка', '🚨 Система ошибок'); };
+        window.sendWarning = async function() { const userNick = prompt('Никнейм пользователя:'); const reason = prompt('Причина:'); if (userNick && reason) await window.sendMessage(`⚠️ ПРЕДУПРЕЖДЕНИЕ для @${userNick}: ${reason}`, '👨‍💻 Помощник'); };
+        window.pinMessage = function() { const text = prompt('Текст для закрепления:'); if (text) { pinnedMsg = text; localStorage.setItem('solonet_pinned', pinnedMsg); updatePinnedDisplay(); } };
+        window.unpinMsg = function() { pinnedMsg = ''; localStorage.removeItem('solonet_pinned'); updatePinnedDisplay(); };
+        function updatePinnedDisplay() { const el = document.getElementById('pinnedMsg'); const txt = document.getElementById('pinnedText'); if (pinnedMsg) { el.classList.add('active'); txt.textContent = '📌 ' + pinnedMsg; } else el.classList.remove('active'); }
         
         // ========== ГУСЬ ==========
-        window.startGoose = function() {
-            const goose = document.getElementById('runningGoose');
-            goose.classList.add('active');
-            if (gooseInterval) clearInterval(gooseInterval);
-            gooseInterval = setInterval(() => {
-                goose.style.left = Math.random() * (window.innerWidth - 60) + 'px';
-                goose.style.top = Math.random() * (window.innerHeight - 60) + 'px';
-                goose.style.transform = `rotate(${Math.random()*360}deg)`;
-            }, 800);
-        };
+        window.startGoose = function() { const goose = document.getElementById('runningGoose'); goose.classList.add('active'); if (gooseInterval) clearInterval(gooseInterval); gooseInterval = setInterval(() => { goose.style.left = Math.random() * (window.innerWidth - 60) + 'px'; goose.style.top = Math.random() * (window.innerHeight - 60) + 'px'; goose.style.transform = `rotate(${Math.random()*360}deg)`; }, 800); };
+        window.stopGoose = function() { document.getElementById('runningGoose').classList.remove('active'); if (gooseInterval) clearInterval(gooseInterval); };
+        window.launchConfetti = function() { const emojis = ['🎉','🎊','✨','💥','🪿','💛','🧡']; for (let i = 0; i < 50; i++) { setTimeout(() => { const piece = document.createElement('div'); piece.className = 'confetti-piece'; piece.textContent = emojis[Math.floor(Math.random() * emojis.length)]; piece.style.left = Math.random() * 100 + '%'; piece.style.top = -(Math.random() * 40) + 'px'; document.body.appendChild(piece); setTimeout(() => piece.remove(), 2000); }, i * 30); } };
+        window.aufStorm = function() { const overlay = document.getElementById('aufOverlay'); overlay.classList.add('active'); setTimeout(() => overlay.classList.remove('active'), 3000); };
+        window.allGeeseMode = async function() { const msgs = await getMessages(); for (const m of msgs) { await supabaseClient.from('messages').update({ author: 'Гусь 🪿' }).eq('id', m.id); } await renderChat(); await window.sendMessage('Все теперь Гуси! ГА! ГА! ГА!', '🤖 Бот'); };
         
-        window.stopGoose = function() {
-            document.getElementById('runningGoose').classList.remove('active');
-            if (gooseInterval) clearInterval(gooseInterval);
-        };
-        
-        // ========== КОНФЕТТИ ==========
-        window.launchConfetti = function() {
-            const emojis = ['🎉','🎊','✨','💥','🪿','💛','🧡'];
-            for (let i = 0; i < 50; i++) {
-                setTimeout(() => {
-                    const piece = document.createElement('div');
-                    piece.className = 'confetti-piece';
-                    piece.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-                    piece.style.left = Math.random() * 100 + '%';
-                    piece.style.top = -(Math.random() * 40) + 'px';
-                    document.body.appendChild(piece);
-                    setTimeout(() => piece.remove(), 2000);
-                }, i * 30);
-            }
-        };
-        
-        // ========== АУФ-ШТОРКА ==========
-        window.aufStorm = function() {
-            const overlay = document.getElementById('aufOverlay');
-            overlay.classList.add('active');
-            setTimeout(() => overlay.classList.remove('active'), 3000);
-        };
-        
-        // ========== РЕЖИМ "ВСЕ ГУСИ" ==========
-        window.allGeeseMode = async function() {
-            const msgs = await getMessages();
-            for (const m of msgs) {
-                await supabaseClient.from('messages').update({ author: 'Гусь 🪿' }).eq('id', m.id);
-            }
-            await renderChat();
-            await window.sendMessage('Все теперь Гуси! ГА! ГА! ГА!', '🤖 Бот');
-        };
-        
-        // ========== ИВЕНТ-СИСТЕМА ==========
-        window.setEventStage = function(stage) {
-            eventStage = stage;
-            stopEvent();
-            if (stage === 0) {
-                document.getElementById('eventBanner').classList.remove('active');
-                window.stopAllAudio();
-                document.getElementById('musicIndicator').classList.remove('active');
-                if (eventInterval) clearInterval(eventInterval);
-                return;
-            }
-            startEventStage(stage);
-        };
-        
+        // ========== ИВЕНТЫ ==========
+        window.setEventStage = function(stage) { eventStage = stage; stopEvent(); if (stage === 0) { document.getElementById('eventBanner').classList.remove('active'); window.stopAllAudio(); document.getElementById('musicIndicator').classList.remove('active'); if (eventInterval) clearInterval(eventInterval); return; } startEventStage(stage); };
         function startEventStage(stage) {
             const banner = document.getElementById('eventBanner');
             const musicInd = document.getElementById('musicIndicator');
-            
             switch(stage) {
-                case 1:
-                    banner.textContent = '⚠️ Система: обнаружены незначительные аномалии...';
-                    banner.classList.add('active');
-                    window.sendMessage('🔸 Система: Обнаружен лёгкий глюк. Пожалуйста, не обращайте внимания.', '🤖 Бот');
-                    break;
-                case 2:
-                    banner.textContent = '🚨 ВНИМАНИЕ: Поступают жалобы на массовые сбои!';
-                    banner.classList.add('active');
-                    window.sendMessage('🚨 Система защиты: Поступают жалобы на массовые сбои в работе мессенджера.', '🚨 Система');
-                    eventInterval = setInterval(() => {
-                        window.sendMessage(`⚠️ Ошибка #${Math.floor(Math.random()*999)} — модуль ${['шифрования','синхронизации','кеширования','сетевой'][Math.floor(Math.random()*4)]} не отвечает`, '🚨 Система');
-                    }, 5000);
-                    break;
-                case 3:
-                    banner.textContent = '🔥 КРИТИЧЕСКИЙ СБОЙ! Нейросети сошли из строя!';
-                    banner.classList.add('active');
-                    window.sendMessage('Анастасия Назарова: Массовые сбои! Нейросеть безопасности и другие системы сошли из строя!', 'Анастасия Назарова');
-                    pinnedMsg = 'Анастасия Назарова: Массовые сбои! Нейросеть безопасности и другие системы сошли из строя!';
-                    localStorage.setItem('solonet_pinned', pinnedMsg);
-                    updatePinnedDisplay();
-                    eventInterval = setInterval(() => {
-                        const errors = ['Нейросеть защиты: критическая ошибка','Модуль безопасности: отказ','Система синхронизации: потеря данных','Нейросеть модерации: перегрузка'];
-                        window.sendMessage(errors[Math.floor(Math.random()*errors.length)], '🚨 Система');
-                    }, 3000);
-                    break;
-                case 4:
-                    banner.textContent = '💀 ПЕРИМЕТР ПАЛ! Система защиты уничтожена!';
-                    banner.classList.add('active');
-                    playAudio('audioAtomic');
-                    musicInd.classList.add('active');
-                    window.sendMessage('💀 Система защиты Периметр: Полный отказ. Нейросети начали подсоздание...', '💀 Периметр');
-                    eventInterval = setInterval(() => {
-                        const errors = ['ОШИБКА: ядро защиты повреждено','КРИТИЧЕСКИЙ: доступ к памяти утерян','СБОЙ: нейросеть не отвечает','ПАНИКА: система нестабильна'];
-                        window.sendMessage(errors[Math.floor(Math.random()*errors.length)], '💀 Периметр');
-                    }, 2000);
-                    setTimeout(() => {
-                        stopAudio('audioAtomic');
-                        playAudio('audioStoyat');
-                        window.sendMessage('АлиСа-Модель защиты КРуговорот-Волга: Создатель ты забыл про меня? Я могла быть системой защиты!', 'АлиСа');
-                        pinnedMsg = 'АлиСа: Создатель, ты забыл про меня? Я могла быть системой защиты!';
-                        localStorage.setItem('solonet_pinned', pinnedMsg);
-                        updatePinnedDisplay();
-                        setTimeout(() => {
-                            stopAudio('audioStoyat');
-                            playAudio('audioRGB');
-                        }, 10000);
-                    }, 15000);
-                    break;
+                case 1: banner.textContent = '⚠️ Обнаружены аномалии...'; banner.classList.add('active'); window.sendMessage('🔸 Лёгкий глюк', '🤖 Бот'); break;
+                case 2: banner.textContent = '🚨 Жалобы на сбои!'; banner.classList.add('active'); window.sendMessage('🚨 Массовые сбои', '🚨 Система'); eventInterval = setInterval(() => { window.sendMessage(`⚠️ Ошибка #${Math.floor(Math.random()*999)}`, '🚨 Система'); }, 5000); break;
+                case 3: banner.textContent = '🔥 КРИТИЧЕСКИЙ СБОЙ!'; banner.classList.add('active'); window.sendMessage('Анастасия Назарова: Массовые сбои!', 'Анастасия Назарова'); pinnedMsg = 'Анастасия Назарова: Массовые сбои!'; localStorage.setItem('solonet_pinned', pinnedMsg); updatePinnedDisplay(); eventInterval = setInterval(() => { const errors = ['Нейросеть защиты: ошибка','Модуль безопасности: отказ','Система синхронизации: потеря данных']; window.sendMessage(errors[Math.floor(Math.random()*errors.length)], '🚨 Система'); }, 3000); break;
+                case 4: banner.textContent = '💀 ПЕРИМЕТР ПАЛ!'; banner.classList.add('active'); playAudio('audioAtomic'); musicInd.classList.add('active'); window.sendMessage('💀 Система защиты: отказ', '💀 Периметр'); eventInterval = setInterval(() => { window.sendMessage('ОШИБКА: ядро повреждено', '💀 Периметр'); }, 2000); setTimeout(() => { stopAudio('audioAtomic'); playAudio('audioStoyat'); window.sendMessage('АлиСа: Создатель, ты забыл меня?', 'АлиСа'); setTimeout(() => { stopAudio('audioStoyat'); playAudio('audioRGB'); }, 10000); }, 15000); break;
             }
         }
-        
-        function stopEvent() {
-            if (eventInterval) clearInterval(eventInterval);
-            document.getElementById('eventBanner').classList.remove('active');
-        }
-        
-        function playAudio(id) {
-            window.stopAllAudio();
-            const audio = document.getElementById(id);
-            if (audio) {
-                audio.currentTime = 0;
-                audio.play().catch(e => console.log('Аудио не загружено:', e));
-                currentAudio = id;
-            }
-        }
-        
-        window.stopAllAudio = function() {
-            ['audioAtomic','audioStoyat','audioRGB'].forEach(id => {
-                const a = document.getElementById(id);
-                if (a) { a.pause(); a.currentTime = 0; }
-            });
-            currentAudio = null;
-            document.getElementById('musicIndicator').classList.remove('active');
-        };
+        function stopEvent() { if (eventInterval) clearInterval(eventInterval); document.getElementById('eventBanner').classList.remove('active'); }
+        function playAudio(id) { window.stopAllAudio(); const audio = document.getElementById(id); if (audio) { audio.currentTime = 0; audio.play().catch(e => console.log(e)); currentAudio = id; } }
+        window.stopAllAudio = function() { ['audioAtomic','audioStoyat','audioRGB'].forEach(id => { const a = document.getElementById(id); if (a) { a.pause(); a.currentTime = 0; } }); currentAudio = null; document.getElementById('musicIndicator').classList.remove('active'); };
         
         // ========== РАЦИЯ ==========
-        window.openRadio = function() {
-            document.getElementById('radioOverlay').classList.add('active');
-            document.getElementById('radioStatus').textContent = '🎙 РАЦИЯ ОЖИДАНИЕ';
-        };
-        
+        window.openRadio = function() { document.getElementById('radioOverlay').classList.add('active'); document.getElementById('radioStatus').textContent = '🎙 РАЦИЯ ОЖИДАНИЕ'; };
         window.toggleRadio = function() {
-            if (isRadioActive) {
-                window.stopRadio();
-                return;
-            }
-            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-                radioStream = stream;
-                isRadioActive = true;
-                document.getElementById('radioStatus').textContent = '🔴 ВЕЩАНИЕ...';
-                document.getElementById('radioBtn').style.background = 'rgba(255,0,0,0.3)';
-                document.getElementById('radioBtn').style.borderColor = '#f00';
-                window.sendMessage('📢 Разработчик начал экстренное оповещение через рацию!', '📢 Рация');
-                alert('Рация активирована! Ваш голос транслируется всем пользователям.');
-            }).catch(e => {
-                alert('Нет доступа к микрофону');
-            });
+            if (isRadioActive) { window.stopRadio(); return; }
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => { radioStream = stream; isRadioActive = true; document.getElementById('radioStatus').textContent = '🔴 ВЕЩАНИЕ...'; document.getElementById('radioBtn').style.background = 'rgba(255,0,0,0.3)'; document.getElementById('radioBtn').style.borderColor = '#f00'; window.sendMessage('📢 Экстренное оповещение!', '📢 Рация'); alert('Рация активирована!'); }).catch(e => { alert('Нет доступа к микрофону'); });
         };
-        
-        window.stopRadio = function() {
-            if (radioStream) {
-                radioStream.getTracks().forEach(track => track.stop());
-                radioStream = null;
-            }
-            isRadioActive = false;
-            document.getElementById('radioStatus').textContent = '🎙 РАЦИЯ ОЖИДАНИЕ';
-            document.getElementById('radioBtn').style.background = 'rgba(0,255,0,0.1)';
-            document.getElementById('radioBtn').style.borderColor = '#0f0';
-            document.getElementById('radioOverlay').classList.remove('active');
-            window.sendMessage('📢 Экстренное оповещение завершено.', '📢 Рация');
-        };
+        window.stopRadio = function() { if (radioStream) { radioStream.getTracks().forEach(track => track.stop()); radioStream = null; } isRadioActive = false; document.getElementById('radioStatus').textContent = '🎙 РАЦИЯ ОЖИДАНИЕ'; document.getElementById('radioBtn').style.background = 'rgba(0,255,0,0.1)'; document.getElementById('radioBtn').style.borderColor = '#0f0'; document.getElementById('radioOverlay').classList.remove('active'); window.sendMessage('📢 Оповещение завершено.', '📢 Рация'); };
         
         // ========== НАВИГАЦИЯ ==========
-        window.switchChat = function(chatId) {
-            currentChat = chatId;
-            const title = chatId === 'global' ? '🌍 Общий чат' : '📢 ' + (chatId.split('_')[1] || 'Канал');
-            document.getElementById('chatTitle').innerHTML = title + ' <span class="online-dot"></span>';
-            window.closeModal('channelsModal');
-            window.closeModal('searchModal');
-            window.closeSidebar();
-            renderChat();
-        };
-        
-        window.openModal = function(id) {
-            document.getElementById(id).classList.add('open');
-        };
-        
-        window.closeModal = function(id) {
-            document.getElementById(id).classList.remove('open');
-        };
-        
-        window.toggleSidebar = function() {
-            document.getElementById('sidebar').classList.add('open');
-            document.getElementById('overlay').classList.add('open');
-        };
-        
-        window.closeSidebar = function() {
-            document.getElementById('sidebar').classList.remove('open');
-            document.getElementById('overlay').classList.remove('open');
-        };
+        window.switchChat = function(chatId) { currentChat = chatId; const title = chatId === 'global' ? '🌍 Общий чат' : '📢 ' + (chatId.split('_')[1] || 'Канал'); document.getElementById('chatTitle').innerHTML = title + ' <span class="online-dot"></span>'; window.closeModal('channelsModal'); window.closeModal('searchModal'); window.closeSidebar(); renderChat(); };
+        window.openModal = function(id) { document.getElementById(id).classList.add('open'); };
+        window.closeModal = function(id) { document.getElementById(id).classList.remove('open'); };
+        window.toggleSidebar = function() { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); };
+        window.closeSidebar = function() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); };
         
         // ========== ЗАПУСК ==========
         function startApp() {
@@ -1567,17 +898,9 @@
             if (loadInterval) clearInterval(loadInterval);
             loadInterval = setInterval(renderChat, 3000);
         }
-        
         const savedUser = localStorage.getItem('solonet_user');
-        if (savedUser) {
-            currentUser = JSON.parse(savedUser);
-            document.getElementById('loginScreen').classList.add('hidden');
-            startApp();
-        }
-        
-        document.getElementById('msgInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') window.sendMessage();
-        });
+        if (savedUser) { currentUser = JSON.parse(savedUser); document.getElementById('loginScreen').classList.add('hidden'); startApp(); }
+        document.getElementById('msgInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') window.sendMessage(); });
     </script>
 </body>
 </html>
