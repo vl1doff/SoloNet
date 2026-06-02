@@ -3,904 +3,988 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SoloNet v3.2 — Облачный мессенджер</title>
+    <title>SoloNet v5.0 — Система ролей (Создатель/Админ/Помощник)</title>
     <style>
-        :root {
-            --bg: #1a1a2e; --surface: #16213e; --surface2: #0f3460;
-            --primary: #e94560; --secondary: #ffb800;
-            --text: #e0e0e0; --text-secondary: #a0a0b8;
-            --msg-mine: #1a4080; --msg-other: #2a2a4a;
-            --border: #1f2b47; --hover: #1a2a45;
-            --success: #4caf50; --error: #ff3b30;
-            --accent: #00b4d8;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg); color: var(--text);
-            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: all 0.3s;
         }
-        
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--surface2); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
-        
-        .topbar {
-            background: var(--surface); padding: 8px 12px;
-            display: flex; align-items: center; gap: 10px;
-            border-bottom: 1px solid var(--border);
-            flex-shrink: 0;
+
+        body.light {
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
         }
-        .menu-btn, .topbar-btn {
-            background: none; border: none; color: var(--text);
-            font-size: 22px; cursor: pointer; padding: 6px 8px;
-            border-radius: 8px; transition: 0.2s;
+
+        .glass-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            width: 95%;
+            max-width: 1400px;
+            height: 90vh;
+            display: flex;
+            overflow: hidden;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .menu-btn:active, .topbar-btn:active { background: var(--hover); transform: scale(0.95); }
-        .chat-title { flex: 1; font-size: 16px; font-weight: 600; }
-        .messages {
-            flex: 1; overflow-y: auto; padding: 8px 10px;
-            display: flex; flex-direction: column; gap: 4px;
+
+        body.light .glass-container {
+            background: rgba(255, 255, 255, 0.7);
         }
-        .msg {
-            max-width: 82%; padding: 8px 12px; border-radius: 16px;
-            word-wrap: break-word; font-size: 14.5px;
-            animation: fadeIn 0.25s ease;
-            cursor: pointer;
-            transition: 0.1s;
-        }
-        .msg:active { transform: scale(0.98); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-        .msg.mine { align-self: flex-end; background: var(--msg-mine); color: #fff; }
-        .msg.other { align-self: flex-start; background: var(--msg-other); color: var(--text); }
-        .msg .author { font-size: 11px; font-weight: 700; margin-bottom: 3px; opacity: 0.85; }
-        .msg .time { font-size: 10px; opacity: 0.55; text-align: right; margin-top: 3px; }
-        .input-area {
-            display: flex; padding: 8px 10px; gap: 6px;
-            background: var(--surface); border-top: 1px solid var(--border);
-            flex-shrink: 0;
-        }
-        .input-area input {
-            flex: 1; padding: 10px 14px; border-radius: 22px;
-            border: 1px solid var(--border); background: var(--bg);
-            color: var(--text); font-size: 14.5px; outline: none;
-        }
-        .input-area input:focus { border-color: var(--primary); }
-        .send-btn, .cmd-btn {
-            background: var(--primary); color: #fff; border: none;
-            width: 38px; height: 38px; border-radius: 50%; font-size: 18px;
-            cursor: pointer; transition: 0.2s;
-        }
-        .send-btn:active, .cmd-btn:active { transform: scale(0.95); }
-        .cmd-btn { background: var(--surface2); font-size: 14px; font-weight: bold; }
-        
-        .login-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg); z-index: 3000;
-            display: flex; align-items: center; justify-content: center;
-            flex-direction: column; gap: 12px; padding: 24px;
-        }
-        .login-screen.hidden { display: none; }
-        .login-logo {
-            width: 80px; height: 80px; border-radius: 20px;
-            background: var(--primary); display: flex;
-            align-items: center; justify-content: center;
-            font-size: 36px; margin-bottom: 10px;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-        .login-screen h1 { font-size: 22px; font-weight: 700; }
-        .login-screen input {
-            width: 100%; max-width: 280px; padding: 12px 16px;
-            border-radius: 12px; border: 2px solid var(--border);
-            background: var(--surface); color: var(--text);
-            font-size: 16px; text-align: center;
-        }
-        .login-screen input:focus { border-color: var(--primary); }
-        .login-screen button {
-            width: 100%; max-width: 280px; padding: 13px;
-            border-radius: 12px; border: none;
-            background: var(--primary); color: #fff;
-            font-size: 16px; font-weight: 600; cursor: pointer;
-        }
-        .login-tabs { display: flex; gap: 0; max-width: 280px; width: 100%; }
-        .login-tab {
-            flex: 1; padding: 10px; border: none; cursor: pointer;
-            font-size: 14px; font-weight: 600;
-            background: var(--surface2); color: var(--text-secondary);
-            border-radius: 8px 8px 0 0;
-            transition: 0.2s;
-        }
-        .login-tab.active { background: var(--primary); color: #fff; }
-        
+
         .sidebar {
-            position: fixed; top: 0; left: -300px; width: 300px; height: 100%;
-            background: var(--surface); z-index: 25; transition: left 0.3s;
-            overflow-y: auto;
-        }
-        .sidebar.open { left: 0; }
-        .sidebar-header {
-            padding: 20px 16px; border-bottom: 1px solid var(--border);
-            text-align: center;
-        }
-        .sidebar-avatar {
-            width: 60px; height: 60px; border-radius: 50%;
-            background: var(--primary); margin: 0 auto 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 28px;
-        }
-        .sidebar-name { font-size: 17px; font-weight: 600; }
-        .sidebar-username { font-size: 13px; color: var(--text-secondary); }
-        .sidebar-menu { list-style: none; padding: 8px 0; }
-        .sidebar-menu li {
-            padding: 12px 20px; cursor: pointer;
-            display: flex; align-items: center; gap: 12px;
-            transition: 0.2s;
-            border-radius: 8px;
-            margin: 2px 8px;
-        }
-        .sidebar-menu li:active { background: var(--hover); }
-        .sidebar-menu li .icon { font-size: 18px; width: 24px; }
-        
-        .overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 20;
-            opacity: 0; pointer-events: none; transition: 0.3s;
-        }
-        .overlay.open { opacity: 1; pointer-events: auto; }
-        
-        /* Модальные окна — исправлено для корректного скролла */
-        .modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg); z-index: 50;
-            transform: translateX(100%); transition: 0.3s;
+            width: 280px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             flex-direction: column;
+            transition: all 0.3s;
         }
-        .modal.open { transform: translateX(0); }
-        .modal-top {
-            background: var(--surface); padding: 12px;
-            display: flex; align-items: center; gap: 10px;
-            border-bottom: 1px solid var(--border);
-            flex-shrink: 0;
+
+        .sidebar-header {
+            padding: 24px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .modal-top button { background: none; border: none; color: var(--text); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 8px; }
-        .modal-content {
-            padding: 16px;
+
+        .avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .user-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .user-role {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .role-creator { background: #ffd700; color: #000; }
+        .role-admin { background: #ff4444; color: #fff; }
+        .role-helper { background: #4caf50; color: #fff; }
+        .role-user { background: #666; color: #fff; }
+
+        body.light .user-name { color: #2d3748; }
+
+        .user-status {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-menu {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.2s;
+        }
+
+        body.light .nav-item { color: #2d3748; }
+        .nav-item:hover { background: rgba(255, 255, 255, 0.1); }
+        .nav-item.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+        .chat-header {
+            padding: 20px 24px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title { font-size: 20px; font-weight: 600; color: white; }
+        body.light .chat-title { color: #2d3748; }
+
+        .online-badge { font-size: 12px; color: #4caf50; margin-left: 8px; }
+
+        .messages-container {
             flex: 1;
             overflow-y: auto;
-        }
-        .modal-content button {
-            width: 100%; padding: 12px; margin-bottom: 8px;
-            border-radius: 10px; border: none;
-            background: var(--surface2); color: var(--text);
-            cursor: pointer; text-align: center;
-            transition: 0.1s;
-        }
-        .modal-content button:active { opacity: 0.7; transform: scale(0.98); }
-        .modal-content input {
-            width: 100%; padding: 12px; margin-bottom: 12px;
-            border-radius: 10px; border: 1px solid var(--border);
-            background: var(--bg); color: var(--text);
-        }
-        
-        .btn-danger { background: #ff3b30 !important; color: #fff !important; }
-        .btn-dev { background: #9b59b6 !important; color: #fff !important; }
-        .btn-helper { background: #00b4d8 !important; color: #fff !important; }
-        .btn-success { background: #4caf50 !important; color: #fff !important; }
-        .btn-warning { background: #ff9800 !important; color: #fff !important; }
-        .btn-goose { background: #ffb800 !important; color: #000 !important; }
-        
-        .sync-status {
-            position: fixed; bottom: 10px; left: 10px;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
-            padding: 4px 10px; border-radius: 20px;
-            font-size: 10px; z-index: 100;
-        }
-        .date-separator {
-            text-align: center; font-size: 12px;
-            color: var(--text-secondary); margin: 10px 0;
-        }
-        .pinned-msg {
-            background: var(--secondary); color: #000; padding: 6px 12px;
-            font-size: 13px; display: none; justify-content: space-between;
-            align-items: center;
-        }
-        .pinned-msg.active { display: flex; }
-        hr { margin: 12px 0; border-color: var(--border); }
-        
-        .event-banner {
-            position: fixed; top: 0; left: 0; width: 100%;
-            background: #ff3b30; color: #fff; text-align: center;
-            padding: 8px; font-size: 13px; font-weight: bold;
-            z-index: 5000; display: none; animation: blink 0.5s infinite;
-        }
-        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
-        .event-banner.active { display: block; }
-        .event-music-indicator {
-            position: fixed; bottom: 10px; right: 10px;
-            background: var(--primary); color: #fff;
-            padding: 6px 12px; border-radius: 20px;
-            font-size: 12px; z-index: 5001; display: none;
-        }
-        .event-music-indicator.active { display: block; }
-        
-        #runningGoose {
-            position: fixed; z-index: 999; font-size: 40px;
-            pointer-events: none; display: none;
-            transition: top 0.3s, left 0.3s;
-        }
-        #runningGoose.active { display: block; pointer-events: auto; }
-        
-        .confetti-piece {
-            position: fixed; z-index: 1000; pointer-events: none;
-            font-size: 20px; animation: confettiFall 2s ease-out forwards;
-        }
-        @keyframes confettiFall {
-            0% { opacity: 1; transform: translateY(0) rotate(0deg); }
-            100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
-        }
-        
-        .auf-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 2000;
-            display: none; align-items: center; justify-content: center;
-            font-size: 80px; font-weight: 900; color: #fff;
+            padding: 20px;
+            display: flex;
             flex-direction: column;
+            gap: 12px;
         }
-        .auf-overlay.active { display: flex; animation: aufAnim 0.5s ease; }
-        @keyframes aufAnim { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        
-        .radio-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 6000;
-            display: none; align-items: center; justify-content: center;
-            flex-direction: column; gap: 16px;
+
+        .message {
+            max-width: 70%;
+            padding: 10px 16px;
+            border-radius: 20px;
+            animation: fadeInUp 0.3s ease;
+            position: relative;
         }
-        .radio-overlay.active { display: flex; }
-        .radio-btn {
-            width: 80px; height: 80px; border-radius: 50%;
-            border: 3px solid #0f0; background: rgba(0,255,0,0.1);
-            color: #0f0; font-size: 30px; cursor: pointer;
+
+        .message.mine {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-bottom-right-radius: 4px;
         }
-        .radio-btn:active { transform: scale(0.95); }
-        
-        .command-modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 100;
-            display: none; align-items: flex-end; justify-content: center;
+
+        .message.other {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            border-bottom-left-radius: 4px;
         }
-        .command-modal-overlay.active { display: flex; }
-        .command-panel {
-            background: var(--surface); width: 100%; max-width: 500px;
-            border-radius: 16px 16px 0 0; padding: 16px;
-            max-height: 60vh; overflow-y: auto;
+
+        body.light .message.other {
+            background: rgba(0, 0, 0, 0.1);
+            color: #2d3748;
         }
-        .command-item {
-            padding: 10px; border-radius: 8px; cursor: pointer;
-            display: flex; align-items: center; gap: 10px;
-            font-size: 14px; border-bottom: 1px solid var(--border);
+
+        .message-author {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .command-item:active { background: var(--hover); }
-        .command-item .cmd { font-weight: bold; color: var(--primary); }
-        
-        .online-dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #4caf50;
-            margin-left: 6px;
-            animation: pulse-green 1.5s infinite;
-        }
-        @keyframes pulse-green {
-            0% { opacity: 0.5; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1.2); }
-        }
-        .version-tag {
-            position: fixed;
-            bottom: 8px;
-            right: 8px;
+
+        .author-role-badge {
             font-size: 9px;
-            color: var(--text-secondary);
-            opacity: 0.5;
-            z-index: 99;
-        }
-        .rules-block {
-            background: var(--surface2);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            border-left: 4px solid var(--primary);
-        }
-        .rules-block h4 { font-size: 15px; margin-bottom: 6px; color: var(--primary); }
-        .rules-block p, .rules-block li { font-size: 13px; line-height: 1.5; color: var(--text-secondary); margin-bottom: 4px; }
-        .rules-block ul { padding-left: 20px; }
-        
-        .search-result-item {
-            padding: 12px;
-            background: var(--surface2);
+            padding: 1px 6px;
             border-radius: 10px;
-            margin-bottom: 8px;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .message-text { font-size: 14px; line-height: 1.4; word-wrap: break-word; }
+        .message-time { font-size: 10px; opacity: 0.6; text-align: right; margin-top: 4px; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-area {
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 12px;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+
+        body.light .input-area input {
+            background: rgba(0, 0, 0, 0.1);
+            color: #2d3748;
+        }
+
+        .input-area input::placeholder { color: rgba(255, 255, 255, 0.5); }
+
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-size: 20px;
             cursor: pointer;
         }
-        .search-result-item:active { background: var(--hover); }
-        .durov-profile {
-            background: linear-gradient(135deg, #1a4080, #2a2a4a);
-            border: 1px solid var(--primary);
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
         }
-        
-        /* Панель с кнопками внутри модалки — скроллится нормально */
-        .menu-group {
-            background: var(--surface2);
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 12px;
+
+        .modal.active { opacity: 1; visibility: visible; }
+
+        .modal-content {
+            background: rgba(30, 30, 50, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 32px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .menu-group h4 {
+
+        .modal-content h2 { color: white; margin-bottom: 20px; text-align: center; }
+        .modal-content input {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 16px;
+            border: none;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .modal-content button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
             margin-bottom: 8px;
-            font-size: 14px;
-            color: var(--primary);
+        }
+
+        .sync-status {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #4caf50;
+            z-index: 100;
+            cursor: pointer;
+        }
+
+        .messages-container::-webkit-scrollbar { width: 6px; }
+        .messages-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+        .messages-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                height: 100%;
+                z-index: 200;
+                transition: left 0.3s;
+            }
+            .sidebar.open { left: 0; }
+            .message { max-width: 85%; }
+        }
+
+        select, .role-select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <div class="sync-status" id="syncStatus">🔄 Подключение...</div>
-    <div class="event-banner" id="eventBanner"></div>
-    <div class="event-music-indicator" id="musicIndicator">🎵 Играет музыка</div>
-    <div id="runningGoose">🪿</div>
-    <div class="auf-overlay" id="aufOverlay"><div>АУФ</div></div>
-    <div class="radio-overlay" id="radioOverlay">
-        <div class="radio-status" id="radioStatus">🎙 РАЦИЯ ОЖИДАНИЕ</div>
-        <button class="radio-btn" id="radioBtn" onclick="window.toggleRadio()">🎤</button>
-        <p style="color:#fff;font-size:12px;">Нажми для начала вещания</p>
-        <button style="padding:8px 16px;border-radius:8px;border:none;background:#ff3b30;color:#fff;cursor:pointer;" onclick="window.stopRadio()">Завершить</button>
-    </div>
-    
-    <audio id="audioAtomic" loop preload="none">
-        <source src="https://github.com/vl1doff/SoloNet/raw/main/atomic_heart.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="audioStoyat" loop preload="none">
-        <source src="https://github.com/vl1doff/SoloNet/raw/main/stoyat_devchonki.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="audioRGB" loop preload="none">
-        <source src="https://github.com/vl1doff/SoloNet/raw/main/rgb.mp3" type="audio/mpeg">
-    </audio>
+    <div class="glass-container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="avatar" id="avatar">👤</div>
+                <div class="user-name" id="userName">Гость</div>
+                <div class="user-status" id="userRoleBadge"></div>
+            </div>
+            <div class="nav-menu">
+                <div class="nav-item active" onclick="switchChat('global')">💬 Общий чат</div>
+                <div class="nav-item" onclick="openChannels()">📢 Каналы</div>
+                <div class="nav-item" onclick="openSearch()">🔍 Поиск</div>
+                <div class="nav-item" onclick="openAdmin()">⚙️ Админ-панель</div>
+                <div class="nav-item" onclick="openRolePanel()">👑 Управление ролями</div>
+                <div class="nav-item" onclick="logout()">🚪 Выйти</div>
+            </div>
+        </div>
 
-    <!-- ЭКРАН ВХОДА -->
-    <div class="login-screen" id="loginScreen">
-        <div class="login-logo">💬</div>
-        <h1>SoloNet v3.1</h1>
-        <p style="color:var(--text-secondary);font-size:14px;">Облачный мессенджер</p>
-        <div class="login-tabs">
-            <button class="login-tab active" id="tabLoginBtn" onclick="window.switchTab('login')">Вход</button>
-            <button class="login-tab" id="tabRegisterBtn" onclick="window.switchTab('register')">Регистрация</button>
+        <div class="chat-area">
+            <div class="chat-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button class="menu-btn" onclick="toggleSidebar()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer;">☰</button>
+                    <div class="chat-title" id="chatTitle">Общий чат <span class="online-badge">● онлайн</span></div>
+                </div>
+                <button onclick="openSettings()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">⚙️</button>
+            </div>
+            <div class="messages-container" id="messagesContainer">💬 Загрузка...</div>
+            <div class="input-area">
+                <input type="text" id="messageInput" placeholder="Введите сообщение...">
+                <button class="send-btn" onclick="sendMessage()">➤</button>
+            </div>
         </div>
-        <div id="loginForm">
-            <input type="text" id="loginNick" placeholder="Никнейм">
-            <input type="password" id="loginPass" placeholder="Пароль">
-            <button onclick="window.loginUser()">Войти</button>
-        </div>
-        <div id="registerForm" style="display:none;">
+    </div>
+
+    <div class="sync-status" id="syncStatus">🔄 Подключение к Supabase...</div>
+
+    <!-- Модальные окна -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <h2>🔐 Вход / Регистрация</h2>
             <input type="text" id="regNick" placeholder="Никнейм">
             <input type="text" id="regUsername" placeholder="@username">
             <input type="password" id="regPass" placeholder="Пароль">
-            <button onclick="window.registerUser()">Зарегистрироваться</button>
+            <button onclick="register()">Зарегистрироваться</button>
+            <hr style="margin: 16px 0; border-color: rgba(255,255,255,0.1);">
+            <input type="text" id="loginNick" placeholder="Никнейм">
+            <input type="password" id="loginPass" placeholder="Пароль">
+            <button onclick="login()">Войти</button>
         </div>
     </div>
 
-    <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
-    <div class="topbar">
-        <button class="menu-btn" onclick="window.toggleSidebar()">☰</button>
-        <div class="chat-title" id="chatTitle">🌍 Общий чат <span class="online-dot"></span></div>
-        <button class="topbar-btn" onclick="window.openSearch()">🔍</button>
-        <button class="topbar-btn" onclick="window.openChannels()">📢</button>
-        <button class="cmd-btn" onclick="window.openCommandPanel()">&lt;/&gt;</button>
-    </div>
-    <div class="pinned-msg" id="pinnedMsg"><span id="pinnedText"></span><button onclick="window.unpinMsg()">✕</button></div>
-    <div class="messages" id="msgBox"></div>
-    <div class="input-area">
-        <input type="text" id="msgInput" placeholder="Сообщение...">
-        <button class="send-btn" onclick="window.sendMessage()">➤</button>
-    </div>
-
-    <!-- КОМАНДНАЯ ПАНЕЛЬ -->
-    <div class="command-modal-overlay" id="cmdOverlay" onclick="window.closeCommandPanel()">
-        <div class="command-panel" id="cmdPanel" onclick="event.stopPropagation()">
-            <h3 style="margin-bottom:10px;">⚡ Команды</h3>
-            <div class="command-item" onclick="window.useCommand('/погода ')"><span class="cmd">/погода</span> Город</div>
-            <div class="command-item" onclick="window.useCommand('/очки ')"><span class="cmd">/очки</span> Показать очки</div>
-            <div class="command-item" onclick="window.useCommand('/ник ')"><span class="cmd">/ник</span> Сменить ник</div>
-            <div class="command-item" onclick="window.useCommand('/статус ')"><span class="cmd">/статус</span> Сменить статус</div>
-            <div class="command-item" onclick="window.useCommand('/пользователи')"><span class="cmd">/пользователи</span> Список</div>
-            <div class="command-item" onclick="window.useCommand('/помощь')"><span class="cmd">/помощь</span> Все команды</div>
-            <button class="btn-danger" style="margin-top:10px;" onclick="window.closeCommandPanel()">Закрыть</button>
-        </div>
-    </div>
-
-    <!-- МОДАЛКА ПОИСКА -->
-    <div class="modal" id="searchModal">
-        <div class="modal-top"><button onclick="window.closeModal('searchModal')">←</button><span>Поиск пользователей</span></div>
+    <div class="modal" id="rolePanelModal">
         <div class="modal-content">
-            <input type="text" id="searchInput" placeholder="Введите никнейм или @username" style="width:100%; margin-bottom:12px;">
-            <button onclick="window.searchUsers()">🔍 Найти</button>
-            <div id="searchResults" style="margin-top:12px;"></div>
+            <h2>👑 Управление ролями</h2>
+            <div id="rolePanelContent"></div>
+            <button onclick="closeModal('rolePanelModal')">Закрыть</button>
         </div>
     </div>
 
-    <!-- САЙДБАР -->
-    <div class="overlay" id="overlay" onclick="window.closeSidebar()"></div>
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-avatar" id="sidebarAvatar">👤</div>
-            <div class="sidebar-name" id="sidebarName">Пользователь</div>
-            <div class="sidebar-username" id="sidebarUsername">@username</div>
-        </div>
-        <ul class="sidebar-menu">
-            <li onclick="window.switchChat('global')"><span class="icon">🌍</span> Общий чат</li>
-            <li onclick="window.openChannels()"><span class="icon">📢</span> Каналы</li>
-            <li onclick="window.openSearch()"><span class="icon">🔍</span> Поиск пользователей</li>
-            <li onclick="window.openAdmin()"><span class="icon">🔧</span> Админ-панель</li>
-            <li onclick="window.openWhatsNew()"><span class="icon">✨</span> Что нового</li>
-            <li onclick="window.openDonate()"><span class="icon">💰</span> Поддержать автора</li>
-            <li onclick="window.openAbout()"><span class="icon">ℹ️</span> О приложении</li>
-            <li onclick="window.openSettings()"><span class="icon">⚙️</span> Настройки</li>
-            <li onclick="window.logout()"><span class="icon">🚪</span> Выйти</li>
-        </ul>
-    </div>
-
-    <!-- МОДАЛКИ -->
     <div class="modal" id="adminModal">
-        <div class="modal-top"><button onclick="window.closeModal('adminModal')">←</button><span>Админ-панель</span></div>
-        <div class="modal-content" id="adminContent">
-            <input type="password" id="adminPass" placeholder="Пароль админа">
-            <button onclick="window.checkAdminPass()">Войти</button>
+        <div class="modal-content">
+            <h2>🔧 Админ-панель</h2>
+            <input type="password" id="adminPassword" placeholder="Пароль">
+            <button onclick="adminLogin()">Войти</button>
+            <button onclick="closeModal('adminModal')">Отмена</button>
         </div>
     </div>
-    
+
+    <div class="modal" id="adminMenuModal">
+        <div class="modal-content">
+            <h2>⚙️ Панель управления</h2>
+            <div id="adminButtons"></div>
+            <button onclick="closeModal('adminMenuModal')">Закрыть</button>
+        </div>
+    </div>
+
     <div class="modal" id="channelsModal">
-        <div class="modal-top"><button onclick="window.closeModal('channelsModal')">←</button><span>Каналы</span></div>
-        <div class="modal-content" id="channelsContent"></div>
+        <div class="modal-content">
+            <h2>📢 Каналы</h2>
+            <div id="channelsList"></div>
+            <button onclick="closeModal('channelsModal')">Закрыть</button>
+        </div>
+    </div>
+
+    <div class="modal" id="searchModal">
+        <div class="modal-content">
+            <h2>🔍 Поиск</h2>
+            <input type="text" id="searchQuery" placeholder="Никнейм">
+            <button onclick="searchUsers()">Найти</button>
+            <div id="searchResults"></div>
+            <button onclick="closeModal('searchModal')">Закрыть</button>
+        </div>
     </div>
 
     <div class="modal" id="settingsModal">
-        <div class="modal-top"><button onclick="window.closeModal('settingsModal')">←</button><span>Настройки</span></div>
         <div class="modal-content">
-            <button onclick="window.toggleTheme()">🌓 Переключить тему</button>
-            <button onclick="window.exportChat()">📤 Экспорт чата</button>
-            <button onclick="window.clearChat()">🗑 Очистить историю чата</button>
+            <h2>⚙️ Настройки</h2>
+            <button onclick="changeTheme()">🎨 Сменить тему</button>
+            <button onclick="clearChat()">🗑 Очистить чат</button>
+            <button onclick="closeModal('settingsModal')">Закрыть</button>
         </div>
     </div>
 
-    <div class="modal" id="whatsnewModal">
-        <div class="modal-top"><button onclick="window.closeModal('whatsnewModal')">←</button><span>Что нового</span></div>
-        <div class="modal-content" id="whatsnewContent"></div>
-    </div>
-
-    <div class="modal" id="aboutModal">
-        <div class="modal-top"><button onclick="window.closeModal('aboutModal')">←</button><span>О приложении</span></div>
-        <div class="modal-content" id="aboutContent"></div>
-    </div>
-
-    <div class="modal" id="donateModal">
-        <div class="modal-top"><button onclick="window.closeModal('donateModal')">←</button><span>Поддержать автора</span></div>
-        <div class="modal-content" id="donateContent"></div>
-    </div>
-
-    <div class="modal" id="profileModal">
-        <div class="modal-top"><button onclick="window.closeModal('profileModal')">←</button><span>Профиль пользователя</span></div>
-        <div class="modal-content" id="profileContent"></div>
-    </div>
-
-    <div class="version-tag">SoloNet v3.2 | ⚡</div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // ========== SUPABASE НАСТРОЙКИ ==========
         const SUPABASE_URL = 'https://rxtbyaeoqyrvznoedfbx.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4dGJ5YWVvcXlydnpub2VkZmJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NDU5NTAsImV4cCI6MjA5NTEyMTk1MH0.KkZI1XwLBG_UvW_YBwXNTceH8iXuB_vxRJMg9uOxjsI';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4dGJ5YWVvcXlydnpub2VkZmJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NDU5NTAsImV4cCI6MjA5NTEyMTk1MH0.KkZI1XwLBG_UvWYBwXNTceH8iXuB_vxRJMg9uOxjsI';
         
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        let currentUser = { id: null, nickname: null, username: null, isAdmin: false };
+        // Роли: creator (создатель), admin (админ), helper (помощник), user (пользователь)
+        let currentUser = null;
         let currentChat = 'global';
-        let pinnedMsg = localStorage.getItem('solonet_pinned') || '';
-        let loadInterval = null;
+        let messageSubscription = null;
         let theme = localStorage.getItem('solonet_theme') || 'dark';
-        
-        // Ивент-система
-        let eventStage = 0;
-        let eventInterval = null;
-        let currentAudio = null;
-        let radioStream = null;
-        let isRadioActive = false;
-        let gooseInterval = null;
-        let showMsgIds = false;
-        
-        // ========== ТЕМА ==========
+        let isCreator = false;
+        let isAdmin = false;
+        let isHelper = false;
+
+        // Применение темы
         function applyTheme() {
             if (theme === 'light') {
-                document.documentElement.style.setProperty('--bg', '#ffffff');
-                document.documentElement.style.setProperty('--surface', '#f5f5f5');
-                document.documentElement.style.setProperty('--surface2', '#e8e8e8');
-                document.documentElement.style.setProperty('--primary', '#007aff');
-                document.documentElement.style.setProperty('--text', '#1c1c1e');
-                document.documentElement.style.setProperty('--msg-mine', '#007aff');
-                document.documentElement.style.setProperty('--msg-other', '#e9e9eb');
-            } else if (theme === 'goose') {
-                document.documentElement.style.setProperty('--bg', '#fff8e1');
-                document.documentElement.style.setProperty('--surface', '#fff3cd');
-                document.documentElement.style.setProperty('--surface2', '#ffe082');
-                document.documentElement.style.setProperty('--primary', '#ff6f00');
-                document.documentElement.style.setProperty('--text', '#3e2723');
-                document.documentElement.style.setProperty('--msg-mine', '#ffb300');
-                document.documentElement.style.setProperty('--msg-other', '#ffe0b2');
+                document.body.classList.add('light');
             } else {
-                document.documentElement.style.setProperty('--bg', '#1a1a2e');
-                document.documentElement.style.setProperty('--surface', '#16213e');
-                document.documentElement.style.setProperty('--surface2', '#0f3460');
-                document.documentElement.style.setProperty('--primary', '#e94560');
-                document.documentElement.style.setProperty('--text', '#e0e0e0');
-                document.documentElement.style.setProperty('--msg-mine', '#1a4080');
-                document.documentElement.style.setProperty('--msg-other', '#2a2a4a');
+                document.body.classList.remove('light');
             }
         }
-        applyTheme();
-        
-        window.toggleTheme = function() {
-            theme = theme === 'dark' ? 'light' : theme === 'light' ? 'goose' : 'dark';
-            localStorage.setItem('solonet_theme', theme);
-            applyTheme();
-        };
-        
-        window.openSettings = function() { window.openModal('settingsModal'); };
-        window.exportChat = async function() {
-            const msgs = await getMessages();
-            const text = msgs.map(m => `[${m.time}] ${m.author}: ${m.text}`).join('\n');
-            const blob = new Blob([text], { type: 'text/plain' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `solonet_${new Date().toISOString().slice(0,10)}.txt`;
-            a.click();
-        };
-        window.clearChat = async function() {
-            if (confirm('Очистить всю историю сообщений?')) {
-                await supabaseClient.from('messages').delete().eq('chat_id', currentChat);
-                await renderChat();
-                alert('Чат очищен');
+
+        // Получение роли
+        function getUserRole(user) {
+            if (!user) return 'user';
+            if (user.nickname === 'vl1doff') return 'creator';
+            if (user.role === 'admin') return 'admin';
+            if (user.role === 'helper') return 'helper';
+            return 'user';
+        }
+
+        // Отображение роли
+        function getRoleBadge(role) {
+            const roleNames = {
+                creator: '👑 Создатель',
+                admin: '⚡ Админ',
+                helper: '🛡️ Помощник',
+                user: '👤 Пользователь'
+            };
+            const roleClasses = {
+                creator: 'role-creator',
+                admin: 'role-admin',
+                helper: 'role-helper',
+                user: 'role-user'
+            };
+            return `<span class="user-role ${roleClasses[role]}">${roleNames[role]}</span>`;
+        }
+
+        // Обновление интерфейса пользователя
+        function updateUserUI() {
+            if (!currentUser) return;
+            const role = getUserRole(currentUser);
+            document.getElementById('userName').textContent = currentUser.nickname;
+            document.getElementById('userRoleBadge').innerHTML = getRoleBadge(role);
+        }
+
+        // ========== ИНИЦИАЛИЗАЦИЯ ТАБЛИЦ ==========
+        async function initTables() {
+            const { error } = await supabase.from('users').select('id').limit(1);
+            if (error && error.code === '42P01') {
+                updateSyncStatus('⚠️ Создайте таблицы через SQL Editor', false);
+            } else {
+                // Проверяем наличие колонки role
+                const { data: columns } = await supabase.rpc('get_table_columns', { table_name: 'users' }).catch(() => null);
+                if (!columns || !columns.find(c => c.column_name === 'role')) {
+                    await supabase.rpc('add_role_column').catch(async () => {
+                        // Если RPC нет, пробуем прямой SQL через REST (может не сработать)
+                        console.log('Нужно добавить колонку role вручную');
+                    });
+                }
+                updateSyncStatus('✅ Supabase готов', true);
             }
-        };
-        
-        // ========== ПОИСК ПОЛЬЗОВАТЕЛЕЙ ==========
-        window.openSearch = function() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('searchResults').innerHTML = '';
-            window.openModal('searchModal');
-        };
-        
-        window.searchUsers = async function() {
-            const query = document.getElementById('searchInput').value.trim().toLowerCase();
-            const resultsDiv = document.getElementById('searchResults');
-            if (!query) { resultsDiv.innerHTML = '<p style="color:var(--text-secondary);">Введите никнейм или username</p>'; return; }
-            if (query === 'дуров' || query === 'durov' || query === '@durov' || query === 'pavel durov') {
-                resultsDiv.innerHTML = `<div class="search-result-item durov-profile" onclick="window.openDurovProfile()"><div style="display:flex; align-items:center; gap:12px;"><div style="font-size:40px;">🦅</div><div><div><b>Павел Дуров</b> <span style="color:#3b82f6;">✓</span></div><div style="font-size:12px; color:#ffb800;">@durov</div><div style="font-size:11px;">Создатель Telegram</div></div></div></div>`;
+        }
+
+        // ========== РАБОТА С СООБЩЕНИЯМИ ==========
+        async function loadMessages() {
+            if (!currentUser) return;
+            
+            try {
+                const { data, error } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .eq('chat_id', currentChat)
+                    .order('created_at', { ascending: true })
+                    .limit(200);
+                
+                if (error) throw error;
+                renderMessages(data || []);
+            } catch (error) {
+                console.error('Load error:', error);
+            }
+        }
+
+        function renderMessages(messages) {
+            const container = document.getElementById('messagesContainer');
+            if (!container) return;
+            
+            if (!messages || messages.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.5); padding: 40px;">💬 Нет сообщений</div>';
                 return;
             }
-            const { data: users } = await supabaseClient.from('users').select('*').or(`nickname.ilike.%${query}%,username.ilike.%${query}%`);
-            if (!users || users.length === 0) { resultsDiv.innerHTML = '<p style="color:var(--text-secondary);">Пользователи не найдены</p>'; return; }
-            resultsDiv.innerHTML = users.map(user => `<div class="search-result-item" onclick="window.openUserProfile('${user.id}', '${escapeHtml(user.nickname)}', '${escapeHtml(user.username)}')"><div style="display:flex; align-items:center; gap:12px;"><div style="font-size:32px;">👤</div><div><div><b>${escapeHtml(user.nickname)}</b></div><div style="font-size:12px;">${escapeHtml(user.username)}</div><div style="font-size:11px;">${user.status || 'В сети'}</div></div></div></div>`).join('');
-        };
-        
-        window.openUserProfile = function(userId, nickname, username) {
-            document.getElementById('profileContent').innerHTML = `<div style="text-align:center;"><div style="font-size:60px;">👤</div><h2>${escapeHtml(nickname)}</h2><p style="color:var(--text-secondary);">${escapeHtml(username)}</p><button class="btn-success" onclick="window.startPrivateChat('${escapeHtml(nickname)}')" style="margin-top:12px;">💬 Написать в ЛС</button><button class="btn-warning" onclick="window.closeModal('profileModal')">Закрыть</button></div>`;
-            window.openModal('profileModal');
-        };
-        
-        window.openDurovProfile = function() {
-            document.getElementById('profileContent').innerHTML = `<div style="text-align:center;"><div style="font-size:60px;">🦅</div><h2>Павел Дуров <span style="color:#3b82f6;">✓</span></h2><p style="color:#ffb800;">@durov</p><p style="font-size:12px; color:#3b82f6;">Официальный аккаунт</p><p style="font-size:11px;">Создатель Telegram</p><button class="btn-success" onclick="window.startPrivateChat('Павел Дуров 🦅')" style="margin-top:12px;">💬 Написать </button><button class="btn-warning" onclick="window.closeModal('profileModal')">Закрыть</button></div>`;
-            window.openModal('profileModal');
-        };
-        
-        window.startPrivateChat = function(nick) {
-            const chatId = 'private_' + [currentUser.nickname, nick].sort().join('_');
-            window.switchChat(chatId);
-            window.closeModal('profileModal');
-            window.closeModal('searchModal');
-        };
-        
-        // ========== О ПРИЛОЖЕНИИ ==========
-        window.openAbout = function() {
-            document.getElementById('aboutContent').innerHTML = `<h2>ℹ️ О SoloNet</h2><p><b>Версия:</b> 3.2 (1 Июнь 2026)</p><p><b>Разработчик:</b> vl1doff (@Devoler)</p><div class="rules-block"><h4>📜 Правила</h4><ul><li>🚫 Запрещён спам</li><li>🚫 Запрещены оскорбления</li><li>🚫 Запрещён контент 18+</li><li>✅ Разрешено: общение, каналы</li></ul></div><div class="rules-block"><h4>🔒 Конфиденциальность</h4><ul><li>Сообщения в облаке</li><li>Мы не собираем личные данные</li></ul></div>`;
-            window.openModal('aboutModal');
-        };
-        
-        window.openWhatsNew = function() {
-            document.getElementById('whatsnewContent').innerHTML = `<ul style="list-style:none; padding:0;"><li style="margin-bottom:16px; padding:12px; background:var(--surface2); border-radius:10px; border-left:4px solid var(--primary);"><div style="font-weight:700; color:var(--primary);">✅ v3.2 — 1 Июнь 2026</div><ul style="margin-top:6px; padding-left:20px;"><li>👑 Каналы для всех</li><li>👨‍💻 Система Помощников</li><li>🎭 «Глюки» убранны </li><li>🪿 Фикс масштабных багов </li><li>🎉 фикс багов малых</li><li>📢 Рация (только помошник и разраб)</li><li>📊 Система жалоб</li><li>🎨 3 темы оформления</li><li>🔍 Поиск пользователей</li></li></ul></li><li style="padding:12px; background:var(--surface2); border-radius:10px; border-left:4px solid var(--primary);"><div style="font-weight:700; color:var(--primary);">🔜 v3.5 — Сентябрь 2026</div><ul style="margin-top:6px; padding-left:20px;"><li>🔗 P2P-сеть</li><li>🪙 Web3 интеграция</li></ul></li></ul>`;
-            window.openModal('whatsnewModal');
-        };
-        
-        window.openDonate = function() {
-            document.getElementById('donateContent').innerHTML = `<h2>💰 Поддержать автора</h2><p style="margin-bottom:16px;">Разработка SoloNet требует времени и усилий. Ваша поддержка поможет проекту развиваться!</p><div style="background: var(--surface2); padding: 16px; border-radius: 12px; margin-bottom: 12px;"><h3>🎯 Способы поддержки:</h3><p style="margin-top:8px;">💳 DonationAlerts: <b>https://dalink.to/vl1doff</b></p><p>⭐ GitHub Sponsor: <b>github.com/sponsors/vl1doff</b></p></div><p style="font-size:12px; color:var(--text-secondary);">Спасибо, что пользуетесь SoloNet! 💙</p>`;
-            window.openModal('donateModal');
-        };
-        
-        // ========== ВХОД/РЕГИСТРАЦИЯ ==========
-        window.switchTab = function(tab) {
-            const loginBtn = document.getElementById('tabLoginBtn');
-            const registerBtn = document.getElementById('tabRegisterBtn');
-            const loginForm = document.getElementById('loginForm');
-            const registerForm = document.getElementById('registerForm');
-            if (tab === 'login') {
-                loginBtn.classList.add('active'); registerBtn.classList.remove('active');
-                loginForm.style.display = 'flex'; registerForm.style.display = 'none';
-            } else {
-                loginBtn.classList.remove('active'); registerBtn.classList.add('active');
-                loginForm.style.display = 'none'; registerForm.style.display = 'flex';
+            
+            container.innerHTML = messages.map(msg => {
+                const userRole = msg.user_role || 'user';
+                const roleName = { creator: '👑', admin: '⚡', helper: '🛡️', user: '' }[userRole] || '';
+                return `
+                    <div class="message ${msg.user_nickname === currentUser?.nickname ? 'mine' : 'other'}">
+                        ${msg.user_nickname !== currentUser?.nickname ? `
+                            <div class="message-author">
+                                ${escapeHtml(msg.user_nickname)}
+                                ${roleName ? `<span class="author-role-badge">${roleName}</span>` : ''}
+                            </div>
+                        ` : ''}
+                        <div class="message-text">${escapeHtml(msg.text)}</div>
+                        <div class="message-time">${new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendMessage() {
+            if (!currentUser) { showLoginModal(); return; }
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('messages')
+                    .insert([{
+                        chat_id: currentChat,
+                        user_id: currentUser.id,
+                        user_nickname: currentUser.nickname,
+                        user_role: getUserRole(currentUser),
+                        text: text,
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (error) throw error;
+                input.value = '';
+            } catch (error) {
+                console.error('Send error:', error);
+                alert('Ошибка отправки');
             }
-        };
-        
-        window.registerUser = async function() {
+        }
+
+        // ========== АВТОРИЗАЦИЯ С РОЛЯМИ ==========
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.add('active');
+        }
+
+        async function register() {
             const nickname = document.getElementById('regNick').value.trim();
             let username = document.getElementById('regUsername').value.trim();
             const password = document.getElementById('regPass').value.trim();
-            if (!nickname || !username || !password) { alert('Заполните все поля'); return; }
+            
+            if (!nickname || !username || !password) {
+                alert('Заполните все поля');
+                return;
+            }
             if (!username.startsWith('@')) username = '@' + username;
-            const { data: existing } = await supabaseClient.from('users').select('*').or(`nickname.eq.${nickname},username.eq.${username}`);
-            if (existing && existing.length > 0) { alert('Никнейм или username уже занят'); return; }
-            const { data, error } = await supabaseClient.from('users').insert([{ id: Date.now().toString(), nickname, username, password: btoa(password), status: 'В сети', is_admin: nickname === 'vl1doff' || username === '@Devoler', reports: 0, created_at: new Date().toISOString() }]).select();
-            if (error) { alert('Ошибка: ' + error.message); }
-            else { currentUser = { id: data[0].id, nickname: data[0].nickname, username: data[0].username, isAdmin: data[0].is_admin }; localStorage.setItem('solonet_user', JSON.stringify(currentUser)); document.getElementById('loginScreen').classList.add('hidden'); startApp(); }
-        };
-        
-        window.loginUser = async function() {
+            
+            // Определяем роль при регистрации
+            let role = 'user';
+            if (nickname === 'vl1doff') {
+                role = 'creator';
+            } else if (nickname === 'Admin') {
+                role = 'admin';
+            }
+            
+            try {
+                const { data: existing } = await supabase
+                    .from('users')
+                    .select('nickname')
+                    .eq('nickname', nickname)
+                    .single();
+                
+                if (existing) {
+                    alert('Никнейм уже занят');
+                    return;
+                }
+                
+                const { error } = await supabase
+                    .from('users')
+                    .insert([{
+                        nickname: nickname,
+                        username: username,
+                        password: btoa(password),
+                        role: role,
+                        avatar: '👤',
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (error) throw error;
+                
+                alert('Регистрация успешна! Теперь войдите');
+                document.getElementById('regNick').value = '';
+                document.getElementById('regUsername').value = '';
+                document.getElementById('regPass').value = '';
+            } catch (error) {
+                console.error('Register error:', error);
+                alert('Ошибка регистрации');
+            }
+        }
+
+        async function login() {
             const nickname = document.getElementById('loginNick').value.trim();
             const password = document.getElementById('loginPass').value.trim();
             const hashedPass = btoa(password);
-            const { data, error } = await supabaseClient.from('users').select('*').eq('nickname', nickname).eq('password', hashedPass);
-            if (error || !data || data.length === 0) { alert('Неверный никнейм или пароль'); }
-            else {
-                const { data: bans } = await supabaseClient.from('bans').select('*').eq('user_id', data[0].id);
-                if (bans && bans.length > 0) { alert('Вы забанены! Причина: ' + bans[0].reason); return; }
-                currentUser = { id: data[0].id, nickname: data[0].nickname, username: data[0].username, isAdmin: data[0].is_admin };
-                localStorage.setItem('solonet_user', JSON.stringify(currentUser));
-                document.getElementById('loginScreen').classList.add('hidden');
-                startApp();
-            }
-        };
-        
-        window.logout = function() { localStorage.removeItem('solonet_user'); location.reload(); };
-        
-        // ========== СООБЩЕНИЯ ==========
-        async function getMessages() {
-            const { data, error } = await supabaseClient.from('messages').select('*').eq('chat_id', currentChat).order('timestamp', { ascending: true });
-            if (error) return [];
-            return data || [];
-        }
-        
-        window.sendMessage = async function(textOverride = null, authorOverride = null) {
-            const input = document.getElementById('msgInput');
-            const text = textOverride || input.value.trim();
-            if (!text) return;
-            if (text.startsWith('/') && !authorOverride) { processCommand(text); if (!textOverride) input.value = ''; return; }
-            const author = authorOverride || currentUser.nickname;
-            const now = new Date();
-            const { error } = await supabaseClient.from('messages').insert([{ id: Date.now().toString(36) + Math.random().toString(36), chat_id: currentChat, author, text, time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }), timestamp: now.getTime(), user_id: currentUser.id }]);
-            if (error) { alert('Ошибка отправки: ' + error.message); }
-            else { if (!textOverride) input.value = ''; await renderChat(); }
-        };
-        
-        async function renderChat() {
-            const box = document.getElementById('msgBox');
-            if (!box) return;
-            const msgs = await getMessages();
-            let lastDate = '';
-            const today = new Date().toLocaleDateString('ru-RU');
-            const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('ru-RU');
-            box.innerHTML = msgs.map(m => {
-                let sep = '';
-                const msgDate = new Date(m.timestamp).toLocaleDateString('ru-RU');
-                if (msgDate !== lastDate) { lastDate = msgDate; let label = msgDate === today ? 'Сегодня' : msgDate === yesterday ? 'Вчера' : msgDate; sep = `<div class="date-separator">${label}</div>`; }
-                const isMine = m.author === currentUser.nickname;
-                return sep + `<div class="msg ${isMine ? 'mine' : 'other'}" onclick="window.showMessageInfo('${m.id}', '${m.user_id}')">${!isMine ? `<div class="author">${escapeHtml(m.author)}</div>` : ''}<div>${escapeHtml(m.text)}</div><div class="time">${m.time}</div>${showMsgIds ? `<div style="font-size:9px;opacity:0.5;margin-top:4px;">ID: ${m.id}</div>` : ''}</div>`;
-            }).join('');
-            box.scrollTop = box.scrollHeight;
-            document.getElementById('syncStatus').textContent = '✅ Синхронизировано';
-            setTimeout(() => { if (document.getElementById('syncStatus').textContent === '✅ Синхронизировано') document.getElementById('syncStatus').textContent = '🔄 Онлайн'; }, 2000);
-        }
-        
-        function escapeHtml(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
-        
-        window.showMessageInfo = function(msgId, userId) {
-            if (currentUser.isAdmin) { if (confirm('Удалить это сообщение?')) deleteMessage(msgId); }
-            else { const reason = prompt('Отправить жалобу? Напишите причину:'); if (reason && reason !== 'Cancel') reportUser(userId, reason); }
-        };
-        async function deleteMessage(msgId) { const { error } = await supabaseClient.from('messages').delete().eq('id', msgId); if (!error) await renderChat(); }
-        async function reportUser(userId, reason) { const { error } = await supabaseClient.from('reports').insert([{ id: Date.now().toString(), reporter_id: currentUser.id, reported_id: userId, reason, status: 'pending', created_at: new Date().toISOString() }]); if (!error) alert('Жалоба отправлена'); }
-        
-        // ========== КОМАНДЫ ==========
-        async function processCommand(text) {
-            const parts = text.split(' ');
-            const cmd = parts[0].toLowerCase();
-            const args = parts.slice(1).join(' ');
-            switch(cmd) {
-                case '/погода':
-                    if (!args) { window.sendMessage('Укажите город: /погода Москва', '🤖 Бот'); return; }
-                    window.sendMessage(`🌤 Загружаю погоду для "${args}"...`, '🤖 Бот');
-                    try { const res = await fetch(`https://wttr.in/${encodeURIComponent(args)}?format=%C+%t&lang=ru`); const data = await res.text(); window.sendMessage(`🌤 Погода в ${args}: ${data.trim()}`, '🤖 Бот'); } catch(e) { window.sendMessage('❌ Не удалось получить погоду', '🤖 Бот'); }
-                    break;
-                case '/очки': window.sendMessage(`🎮 Ваши очки: ${Math.floor(Math.random() * 1000)}`, '🤖 Бот'); break;
-                case '/ник':
-                    if (!args) { window.sendMessage('Укажите новый ник: /ник НовыйНик', '🤖 Бот'); return; }
-                    await supabaseClient.from('users').update({ nickname: args }).eq('id', currentUser.id);
-                    currentUser.nickname = args; localStorage.setItem('solonet_user', JSON.stringify(currentUser));
-                    document.getElementById('sidebarName').textContent = args;
-                    window.sendMessage(`✅ Ник изменён на ${args}`, '🤖 Бот');
-                    break;
-                case '/статус':
-                    if (!args) { window.sendMessage('Укажите статус: /статус Я здесь', '🤖 Бот'); return; }
-                    await supabaseClient.from('users').update({ status: args }).eq('id', currentUser.id);
-                    window.sendMessage(`✅ Статус обновлён: ${args}`, '🤖 Бот');
-                    break;
-                case '/пользователи':
-                    const { data: users } = await supabaseClient.from('users').select('*');
-                    let list = '👥 Участники:\n';
-                    users.forEach(u => list += `- ${u.nickname} (${u.username})\n`);
-                    window.sendMessage(list, '🤖 Бот');
-                    break;
-                case '/помощь': window.sendMessage(`⚡ Команды:\n/погода Город\n/очки\n/ник НовыйНик\n/статус Текст\n/пользователи\n/помощь`, '🤖 Бот'); break;
-                default: window.sendMessage(`Неизвестная команда: ${cmd}. /помощь для списка.`, '🤖 Бот');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('nickname', nickname)
+                    .eq('password', hashedPass)
+                    .single();
+                
+                if (error || !data) {
+                    alert('Неверный никнейм или пароль');
+                    return;
+                }
+                
+                currentUser = {
+                    id: data.id,
+                    nickname: data.nickname,
+                    username: data.username,
+                    role: data.role || 'user'
+                };
+                
+                const userRole = getUserRole(currentUser);
+                isCreator = userRole === 'creator';
+                isAdmin = userRole === 'creator' || userRole === 'admin';
+                isHelper = userRole === 'helper' || isAdmin;
+                
+                localStorage.setItem('solonet_current_user', JSON.stringify(currentUser));
+                
+                document.getElementById('loginModal').classList.remove('active');
+                updateUserUI();
+                
+                await loadMessages();
+                setupRealtimeSubscription();
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Ошибка входа');
             }
         }
-        
-        window.openCommandPanel = function() { document.getElementById('cmdOverlay').classList.add('active'); };
-        window.closeCommandPanel = function() { document.getElementById('cmdOverlay').classList.remove('active'); };
-        window.useCommand = function(cmd) { document.getElementById('msgInput').value = cmd; window.closeCommandPanel(); document.getElementById('msgInput').focus(); };
-        
-        // ========== КАНАЛЫ ==========
-        window.openChannels = async function() {
-            const { data: channels } = await supabaseClient.from('channels').select('*');
-            let html = '<h3 style="margin-bottom:12px;">📢 Все каналы</h3>';
-            if (currentUser.isAdmin) html += '<button class="btn-success" onclick="window.createChannel()">➕ Создать канал</button><hr>';
-            if (!channels || channels.length === 0) html += '<p style="text-align:center;color:var(--text-secondary);">Нет каналов</p>';
-            else channels.forEach(ch => { html += `<button onclick="window.switchChat('${ch.id}')" style="display:flex; justify-content:space-between;"><span>📢 <b>${escapeHtml(ch.name)}</b></span><span style="font-size:11px;">${escapeHtml(ch.description || '')}</span></button>`; });
-            html += '<hr><button onclick="window.switchChat(\'global\')">🌍 Вернуться в общий чат</button>';
-            document.getElementById('channelsContent').innerHTML = html;
-            window.openModal('channelsModal');
-        };
-        window.createChannel = async function() { const name = prompt('Название канала:'); const description = prompt('Описание:'); if (name) { await supabaseClient.from('channels').insert([{ id: 'channel_' + Date.now(), name, description: description || '', owner_id: currentUser.id, created_at: new Date().toISOString() }]); alert('Канал создан!'); window.openChannels(); } };
-        
-        // ========== АДМИН-ПАНЕЛЬ ==========
-        window.openAdmin = function() { window.openModal('adminModal'); };
-        window.checkAdminPass = function() {
-            const pass = document.getElementById('adminPass').value;
-            if (pass === 'v2012V') showAdminMenu();
-            else alert('Неверный пароль админа');
-        };
-        
-        function showAdminMenu() {
-            document.getElementById('adminContent').innerHTML = `
-                <h3>🔧 Админ-панель</h3>
-                <button onclick="window.showAllUsers()">👥 Список пользователей</button>
-                <button onclick="window.showAllReports()">📊 Жалобы</button>
-                <button onclick="window.showAllBans()">🚫 Список банов</button>
-                <button onclick="window.pinMessage()">📌 Закрепить сообщение</button>
-                <button onclick="window.unpinMsg()">📌 Открепить</button>
-                <button onclick="window.deleteLastMessage()">🗑 Удалить последнее сообщение</button>
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('solonet_current_user');
+            if (messageSubscription) messageSubscription.unsubscribe();
+            document.getElementById('userName').textContent = 'Гость';
+            document.getElementById('userRoleBadge').innerHTML = '';
+            document.getElementById('messagesContainer').innerHTML = '<div style="text-align: center; padding: 40px;">💬 Войдите чтобы начать</div>';
+            showLoginModal();
+        }
+
+        // ========== УПРАВЛЕНИЕ РОЛЯМИ (ТОЛЬКО ДЛЯ СОЗДАТЕЛЯ) ==========
+        async function openRolePanel() {
+            if (!currentUser) {
+                alert('Сначала войдите');
+                return;
+            }
+            
+            const userRole = getUserRole(currentUser);
+            if (userRole !== 'creator') {
+                alert('❌ Только Создатель (vl1doff) может управлять ролями!');
+                return;
+            }
+            
+            // Загружаем всех пользователей
+            const { data: users, error } = await supabase.from('users').select('*');
+            if (error) {
+                alert('Ошибка загрузки пользователей');
+                return;
+            }
+            
+            const container = document.getElementById('rolePanelContent');
+            container.innerHTML = `
+                <h3>👥 Управление ролями</h3>
+                ${users.map(u => `
+                    <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; margin-bottom: 10px;">
+                        <div><strong>${escapeHtml(u.nickname)}</strong> (${escapeHtml(u.username)})</div>
+                        <select id="role_${u.id}" class="role-select">
+                            <option value="user" ${(u.role || 'user') === 'user' ? 'selected' : ''}>👤 Пользователь</option>
+                            <option value="helper" ${u.role === 'helper' ? 'selected' : ''}>🛡️ Помощник</option>
+                            <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>⚡ Админ</option>
+                            <option value="creator" ${u.role === 'creator' ? 'selected' : ''} ${u.nickname === 'vl1doff' ? 'disabled' : ''}>👑 Создатель</option>
+                        </select>
+                        <button onclick="updateUserRole('${u.id}', '${u.nickname}')" style="margin-top: 8px; padding: 8px; font-size: 12px;">💾 Сохранить роль</button>
+                    </div>
+                `).join('')}
                 <hr>
-                <button class="btn-dev" onclick="window.showDevMenuWithPass()">👑 Devoler Menu</button>
-                <button class="btn-helper" onclick="window.showHelperMenuWithPass()">👨‍💻 Помощник создателя</button>
-                <button class="btn-danger" onclick="window.closeModal('adminModal')">Закрыть</button>
+                <div style="margin-top: 15px;">
+                    <h4>📝 Информация о ролях:</h4>
+                    <ul style="font-size: 12px; margin-top: 10px;">
+                        <li><span class="role-creator" style="display: inline-block; padding: 2px 8px;">👑 Создатель</span> - полный доступ, может назначать роли</li>
+                        <li><span class="role-admin" style="display: inline-block; padding: 2px 8px;">⚡ Админ</span> - может управлять чатом, каналами, банить</li>
+                        <li><span class="role-helper" style="display: inline-block; padding: 2px 8px;">🛡️ Помощник</span> - может отправлять системные сообщения</li>
+                        <li><span class="role-user" style="display: inline-block; padding: 2px 8px;">👤 Пользователь</span> - обычный участник</li>
+                    </ul>
+                </div>
             `;
+            
+            document.getElementById('rolePanelModal').classList.add('active');
         }
         
-        window.showDevMenuWithPass = function() {
-            const pass = prompt('🔐 Введите пароль разработчика:');
-            if (pass === 'V2012Qc-melon-xyuTebe') showDevMenu();
-            else alert('❌ Неверный пароль!');
-        };
-        
-        window.showHelperMenuWithPass = function() {
-            const pass = prompt('👨‍💻 Введите пароль помощника создателя:');
-            if (pass === 'Qc2012-xyuTebe-apple') showHelperMenu();
-            else alert('❌ Неверный пароль!');
-        };
-        
-        function showHelperMenu() {
-            document.getElementById('adminContent').innerHTML = `
-                <h3>👨‍💻 Помощник создателя</h3>
-                <p style="font-size:12px; margin-bottom:12px; color:var(--accent);">Ограниченные права</p>
-                <div class="menu-group"><h4>📢 РАЦИЯ</h4><button class="btn-success" onclick="window.openRadio()">🎙 Открыть рацию</button><button onclick="window.stopRadio()">🔇 Выключить рацию</button></div>
-                <div class="menu-group"><h4>👻 ФЕЙКОВЫЕ СООБЩЕНИЯ</h4><button onclick="window.fakeMessage()">✍️ Отправить от лица любого</button><button onclick="window.sendSystemMessage()">⚠️ Системное сообщение</button><button onclick="window.sendWarning()">⚠️ Отправить предупреждение</button></div>
-                <div class="menu-group"><h4>🪿 РАЗВЛЕЧЕНИЯ</h4><button class="btn-goose" onclick="window.startGoose()">🪿 Запустить гуся</button><button onclick="window.stopGoose()">🛑 Остановить гуся</button><button class="btn-success" onclick="window.launchConfetti()">🎉 Конфетти</button><button class="btn-warning" onclick="window.aufStorm()">🔊 АУФ-шторка</button></div>
-                <div class="menu-group"><h4>🔨 МОДЕРАЦИЯ</h4><button onclick="window.showAllUsers()">👥 Список пользователей</button><button onclick="window.showAllReports()">📊 Жалобы</button><button onclick="window.showAllBans()">🚫 Список банов</button><button onclick="window.clearGlobalChat()">🗑 Очистить общий чат</button></div>
-                <hr><button class="btn-danger" onclick="showAdminMenu()">◀ Назад</button><button class="btn-danger" onclick="window.closeModal('adminModal')">Закрыть</button>
-            `;
-        }
-        
-        function showDevMenu() {
-            document.getElementById('adminContent').innerHTML = `
-                <h3>👑 Devoler Menu — Полный доступ</h3>
-                <p style="font-size:12px; margin-bottom:12px; color:var(--accent);">Пароль: V2012Qc-melon-xyuTebe</p>
-                <div class="menu-group"><h4>🎭 ИВЕНТЫ</h4><button class="btn-warning" onclick="window.setEventStage(1)">🔸 Стадия 1</button><button class="btn-warning" onclick="window.setEventStage(2)">🔸 Стадия 2</button><button class="btn-warning" onclick="window.setEventStage(3)">🔸 Стадия 3</button><button class="btn-danger" onclick="window.setEventStage(4)">🔸 Стадия 4</button><button onclick="window.setEventStage(0)">🛑 Остановить ивент</button><button onclick="window.stopAllAudio()">🔇 Остановить музыку</button></div>
-                <div class="menu-group"><h4>🪿 РАЗВЛЕЧЕНИЯ</h4><button class="btn-goose" onclick="window.startGoose()">🪿 Запустить гуся</button><button onclick="window.stopGoose()">🛑 Остановить гуся</button><button class="btn-success" onclick="window.launchConfetti()">🎉 Конфетти</button><button class="btn-warning" onclick="window.aufStorm()">🔊 АУФ-шторка</button><button class="btn-goose" onclick="window.allGeeseMode()">🪿 Режим «Все Гуси»</button><button onclick="window.toggleMsgIds()">🆔 Показать ID</button></div>
-                <div class="menu-group"><h4>📢 РАЦИЯ</h4><button class="btn-success" onclick="window.openRadio()">🎙 Открыть рацию</button></div>
-                <div class="menu-group"><h4>👻 ФЕЙКОВЫЕ СООБЩЕНИЯ</h4><button onclick="window.fakeMessage()">✍️ От лица любого</button><button onclick="window.sendSystemMessage()">⚠️ Системное</button><button onclick="window.sendError()">❌ Ошибка</button></div>
-                <div class="menu-group"><h4>🔨 МОДЕРАЦИЯ</h4><button onclick="window.showAllUsers()">👥 Все пользователи</button><button onclick="window.showAllBans()">🚫 Список банов</button><button onclick="window.banUserById()">🔨 Забанить по ID</button><button onclick="window.unbanUser()">✅ Разбанить</button><button onclick="window.showAllReports()">📊 Жалобы</button><button onclick="window.deleteChannelById()">📢 Удалить канал</button><button onclick="window.clearGlobalChat()">🗑 Очистить общий чат</button><button class="btn-danger" onclick="window.deleteAllMessages()">💣 Удалить ВСЕ сообщения</button></div>
-                <hr><button class="btn-danger" onclick="showAdminMenu()">◀ Назад</button><button class="btn-danger" onclick="window.closeModal('adminModal')">Закрыть</button>
-            `;
-        }
-        
-        window.showAllUsers = async function() { const { data: users } = await supabaseClient.from('users').select('*'); let list = '👥 Пользователи:\n\n'; users.forEach(u => { list += `${u.nickname} (${u.username})\n   ID: ${u.id}\n   Админ: ${u.is_admin ? 'Да' : 'Нет'}\n\n`; }); alert(list); };
-        window.showAllReports = async function() { const { data: reports } = await supabaseClient.from('reports').select('*').eq('status', 'pending'); if (!reports || reports.length === 0) { alert('Нет новых жалоб'); return; } let list = '📊 Жалобы:\n\n'; for (const r of reports) { const { data: user } = await supabaseClient.from('users').select('nickname').eq('id', r.reported_id).single(); list += `👤 ${user?.nickname || r.reported_id}\n   Причина: ${r.reason}\n   ID: ${r.reported_id}\n\n`; } alert(list); for (const r of reports) { await supabaseClient.from('reports').update({ status: 'viewed' }).eq('id', r.id); } };
-        window.showAllBans = async function() { const { data: bans } = await supabaseClient.from('bans').select('*'); if (!bans || bans.length === 0) { alert('Нет забаненных'); return; } let list = '🚫 Забаненные:\n\n'; for (const b of bans) { const { data: user } = await supabaseClient.from('users').select('nickname').eq('id', b.user_id).single(); list += `${user?.nickname || b.user_id}\n   Причина: ${b.reason}\n   ID: ${b.user_id}\n\n`; } alert(list); };
-        window.banUserById = async function() { const userId = prompt('Введите ID пользователя для бана:'); if (userId) { const reason = prompt('Причина бана:'); if (reason) { await supabaseClient.from('bans').insert([{ user_id: userId, reason, banned_by: currentUser.id, created_at: new Date().toISOString() }]); alert('Пользователь забанен'); } } };
-        window.unbanUser = async function() { const userId = prompt('Введите ID пользователя для разбана:'); if (userId) { await supabaseClient.from('bans').delete().eq('user_id', userId); alert('Пользователь разбанен'); } };
-        window.deleteLastMessage = async function() { const { data: messages } = await supabaseClient.from('messages').select('*').eq('chat_id', currentChat).order('timestamp', { ascending: false }).limit(1); if (messages && messages.length > 0) { await supabaseClient.from('messages').delete().eq('id', messages[0].id); await renderChat(); } };
-        window.deleteChannelById = async function() { const channelId = prompt('Введите ID канала для удаления:'); if (channelId) { await supabaseClient.from('messages').delete().eq('chat_id', channelId); await supabaseClient.from('channels').delete().eq('id', channelId); alert('Канал удалён'); if (currentChat === channelId) window.switchChat('global'); } };
-        window.clearGlobalChat = async function() { if (confirm('Очистить весь общий чат?')) { await supabaseClient.from('messages').delete().eq('chat_id', 'global'); await renderChat(); } };
-        window.deleteAllMessages = async function() { if (confirm('💣 УДАЛИТЬ ВСЕ СООБЩЕНИЯ?')) { await supabaseClient.from('messages').delete().neq('id', '0'); await renderChat(); } };
-        
-        // ========== DEV ФУНКЦИИ ==========
-        window.toggleMsgIds = function() { showMsgIds = !showMsgIds; renderChat(); };
-        window.fakeMessage = async function() { const author = prompt('От чьего имени?'); const text = prompt('Текст:'); if (author && text) await window.sendMessage(text, author); };
-        window.sendSystemMessage = async function() { const text = prompt('Текст системного сообщения:'); if (text) await window.sendMessage('🔔 ' + text, '⚙️ Система'); };
-        window.sendError = async function() { await window.sendMessage('⚠️ Ошибка #' + Math.floor(Math.random() * 9999) + ': Непредвиденная ошибка', '🚨 Система ошибок'); };
-        window.sendWarning = async function() { const userNick = prompt('Никнейм пользователя:'); const reason = prompt('Причина:'); if (userNick && reason) await window.sendMessage(`⚠️ ПРЕДУПРЕЖДЕНИЕ для @${userNick}: ${reason}`, '👨‍💻 Помощник'); };
-        window.pinMessage = function() { const text = prompt('Текст для закрепления:'); if (text) { pinnedMsg = text; localStorage.setItem('solonet_pinned', pinnedMsg); updatePinnedDisplay(); } };
-        window.unpinMsg = function() { pinnedMsg = ''; localStorage.removeItem('solonet_pinned'); updatePinnedDisplay(); };
-        function updatePinnedDisplay() { const el = document.getElementById('pinnedMsg'); const txt = document.getElementById('pinnedText'); if (pinnedMsg) { el.classList.add('active'); txt.textContent = '📌 ' + pinnedMsg; } else el.classList.remove('active'); }
-        
-        // ========== ГУСЬ ==========
-        window.startGoose = function() { const goose = document.getElementById('runningGoose'); goose.classList.add('active'); if (gooseInterval) clearInterval(gooseInterval); gooseInterval = setInterval(() => { goose.style.left = Math.random() * (window.innerWidth - 60) + 'px'; goose.style.top = Math.random() * (window.innerHeight - 60) + 'px'; goose.style.transform = `rotate(${Math.random()*360}deg)`; }, 800); };
-        window.stopGoose = function() { document.getElementById('runningGoose').classList.remove('active'); if (gooseInterval) clearInterval(gooseInterval); };
-        window.launchConfetti = function() { const emojis = ['🎉','🎊','✨','💥','🪿','💛','🧡']; for (let i = 0; i < 50; i++) { setTimeout(() => { const piece = document.createElement('div'); piece.className = 'confetti-piece'; piece.textContent = emojis[Math.floor(Math.random() * emojis.length)]; piece.style.left = Math.random() * 100 + '%'; piece.style.top = -(Math.random() * 40) + 'px'; document.body.appendChild(piece); setTimeout(() => piece.remove(), 2000); }, i * 30); } };
-        window.aufStorm = function() { const overlay = document.getElementById('aufOverlay'); overlay.classList.add('active'); setTimeout(() => overlay.classList.remove('active'), 3000); };
-        window.allGeeseMode = async function() { const msgs = await getMessages(); for (const m of msgs) { await supabaseClient.from('messages').update({ author: 'Гусь 🪿' }).eq('id', m.id); } await renderChat(); await window.sendMessage('Все теперь Гуси! ГА! ГА! ГА!', '🤖 Бот'); };
-        
-        // ========== ИВЕНТЫ ==========
-        window.setEventStage = function(stage) { eventStage = stage; stopEvent(); if (stage === 0) { document.getElementById('eventBanner').classList.remove('active'); window.stopAllAudio(); document.getElementById('musicIndicator').classList.remove('active'); if (eventInterval) clearInterval(eventInterval); return; } startEventStage(stage); };
-        function startEventStage(stage) {
-            const banner = document.getElementById('eventBanner');
-            const musicInd = document.getElementById('musicIndicator');
-            switch(stage) {
-                case 1: banner.textContent = '⚠️ Обнаружены аномалии...'; banner.classList.add('active'); window.sendMessage('🔸 Лёгкий глюк', '🤖 Бот'); break;
-                case 2: banner.textContent = '🚨 Жалобы на сбои!'; banner.classList.add('active'); window.sendMessage('🚨 Массовые сбои', '🚨 Система'); eventInterval = setInterval(() => { window.sendMessage(`⚠️ Ошибка #${Math.floor(Math.random()*999)}`, '🚨 Система'); }, 5000); break;
-                case 3: banner.textContent = '🔥 КРИТИЧЕСКИЙ СБОЙ!'; banner.classList.add('active'); window.sendMessage('Анастасия Назарова: Массовые сбои!', 'Анастасия Назарова'); pinnedMsg = 'Анастасия Назарова: Массовые сбои!'; localStorage.setItem('solonet_pinned', pinnedMsg); updatePinnedDisplay(); eventInterval = setInterval(() => { const errors = ['Нейросеть защиты: ошибка','Модуль безопасности: отказ','Система синхронизации: потеря данных']; window.sendMessage(errors[Math.floor(Math.random()*errors.length)], '🚨 Система'); }, 3000); break;
-                case 4: banner.textContent = '💀 ПЕРИМЕТР ПАЛ!'; banner.classList.add('active'); playAudio('audioAtomic'); musicInd.classList.add('active'); window.sendMessage('💀 Система защиты: отказ', '💀 Периметр'); eventInterval = setInterval(() => { window.sendMessage('ОШИБКА: ядро повреждено', '💀 Периметр'); }, 2000); setTimeout(() => { stopAudio('audioAtomic'); playAudio('audioStoyat'); window.sendMessage('АлиСа: Создатель, ты забыл меня?', 'АлиСа'); setTimeout(() => { stopAudio('audioStoyat'); playAudio('audioRGB'); }, 10000); }, 15000); break;
+        async function updateUserRole(userId, nickname) {
+            const select = document.getElementById(`role_${userId}`);
+            const newRole = select.value;
+            
+            if (nickname === 'vl1doff' && newRole !== 'creator') {
+                alert('❌ Нельзя изменить роль Создателя!');
+                return;
+            }
+            
+            const { error } = await supabase
+                .from('users')
+                .update({ role: newRole })
+                .eq('id', userId);
+            
+            if (error) {
+                alert('Ошибка обновления роли');
+            } else {
+                alert(`✅ Роль пользователя ${nickname} изменена на ${newRole}`);
+                openRolePanel(); // Обновляем список
             }
         }
-        function stopEvent() { if (eventInterval) clearInterval(eventInterval); document.getElementById('eventBanner').classList.remove('active'); }
-        function playAudio(id) { window.stopAllAudio(); const audio = document.getElementById(id); if (audio) { audio.currentTime = 0; audio.play().catch(e => console.log(e)); currentAudio = id; } }
-        window.stopAllAudio = function() { ['audioAtomic','audioStoyat','audioRGB'].forEach(id => { const a = document.getElementById(id); if (a) { a.pause(); a.currentTime = 0; } }); currentAudio = null; document.getElementById('musicIndicator').classList.remove('active'); };
-        
-        // ========== РАЦИЯ ==========
-        window.openRadio = function() { document.getElementById('radioOverlay').classList.add('active'); document.getElementById('radioStatus').textContent = '🎙 РАЦИЯ ОЖИДАНИЕ'; };
-        window.toggleRadio = function() {
-            if (isRadioActive) { window.stopRadio(); return; }
-            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => { radioStream = stream; isRadioActive = true; document.getElementById('radioStatus').textContent = '🔴 ВЕЩАНИЕ...'; document.getElementById('radioBtn').style.background = 'rgba(255,0,0,0.3)'; document.getElementById('radioBtn').style.borderColor = '#f00'; window.sendMessage('📢 Экстренное оповещение!', '📢 Рация'); alert('Рация активирована!'); }).catch(e => { alert('Нет доступа к микрофону'); });
-        };
-        window.stopRadio = function() { if (radioStream) { radioStream.getTracks().forEach(track => track.stop()); radioStream = null; } isRadioActive = false; document.getElementById('radioStatus').textContent = '🎙 РАЦИЯ ОЖИДАНИЕ'; document.getElementById('radioBtn').style.background = 'rgba(0,255,0,0.1)'; document.getElementById('radioBtn').style.borderColor = '#0f0'; document.getElementById('radioOverlay').classList.remove('active'); window.sendMessage('📢 Оповещение завершено.', '📢 Рация'); };
-        
-        // ========== НАВИГАЦИЯ ==========
-        window.switchChat = function(chatId) { currentChat = chatId; const title = chatId === 'global' ? '🌍 Общий чат' : '📢 ' + (chatId.split('_')[1] || 'Канал'); document.getElementById('chatTitle').innerHTML = title + ' <span class="online-dot"></span>'; window.closeModal('channelsModal'); window.closeModal('searchModal'); window.closeSidebar(); renderChat(); };
-        window.openModal = function(id) { document.getElementById(id).classList.add('open'); };
-        window.closeModal = function(id) { document.getElementById(id).classList.remove('open'); };
-        window.toggleSidebar = function() { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); };
-        window.closeSidebar = function() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); };
-        
-        // ========== ЗАПУСК ==========
-        function startApp() {
-            document.getElementById('sidebarName').textContent = currentUser.nickname;
-            document.getElementById('sidebarUsername').textContent = currentUser.username;
-            document.getElementById('sidebarAvatar').textContent = currentUser.nickname[0]?.toUpperCase() || '👤';
-            updatePinnedDisplay();
-            renderChat();
-            if (loadInterval) clearInterval(loadInterval);
-            loadInterval = setInterval(renderChat, 3000);
+
+        // ========== REAL-TIME ПОДПИСКА ==========
+        function setupRealtimeSubscription() {
+            if (messageSubscription) messageSubscription.unsubscribe();
+            
+            messageSubscription = supabase
+                .channel('messages_channel')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => loadMessages())
+                .subscribe();
         }
-        const savedUser = localStorage.getItem('solonet_user');
-        if (savedUser) { currentUser = JSON.parse(savedUser); document.getElementById('loginScreen').classList.add('hidden'); startApp(); }
-        document.getElementById('msgInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') window.sendMessage(); });
+
+        // ========== АДМИНКА (для админов и создателя) ==========
+        function openAdmin() {
+            if (!currentUser) { alert('Сначала войдите'); return; }
+            document.getElementById('adminModal').classList.add('active');
+        }
+
+        function adminLogin() {
+            const pass = document.getElementById('adminPassword').value;
+            const userRole = getUserRole(currentUser);
+            
+            if (userRole === 'creator' || userRole === 'admin') {
+                showAdminMenu();
+                document.getElementById('adminModal').classList.remove('active');
+            } else if (pass === 'v2012V' || pass === 'V2012Qc-melon-xyuTebe' || pass === 'Qc2012-xyuTebe-apple') {
+                showAdminMenu();
+                document.getElementById('adminModal').classList.remove('active');
+            } else {
+                alert('Неверный пароль');
+            }
+            document.getElementById('adminPassword').value = '';
+        }
+
+        function showAdminMenu() {
+            const userRole = getUserRole(currentUser);
+            const container = document.getElementById('adminButtons');
+            
+            let buttons = `
+                <button onclick="showUsers()">👥 Список пользователей</button>
+                <button onclick="clearAllMessages()">🗑 Очистить все сообщения</button>
+            `;
+            
+            if (userRole === 'creator' || userRole === 'admin') {
+                buttons += `<button onclick="createChannel()">📢 Создать канал</button>`;
+                buttons += `<button onclick="banUser()">🚫 Забанить пользователя</button>`;
+            }
+            
+            if (userRole === 'creator') {
+                buttons += `<button onclick="sendSystemMessage()">📢 Системное сообщение</button>`;
+                buttons += `<button onclick="clearLocalStorage()">💣 Полный сброс БД</button>`;
+            } else if (userRole === 'admin' || isHelper) {
+                buttons += `<button onclick="sendSystemMessage()">📢 Системное сообщение</button>`;
+            }
+            
+            container.innerHTML = buttons;
+            document.getElementById('adminMenuModal').classList.add('active');
+        }
+
+        async function showUsers() {
+            const { data, error } = await supabase.from('users').select('*');
+            if (error) return;
+            let list = '👥 Пользователи:\n\n';
+            data.forEach(u => {
+                const role = u.role || 'user';
+                const roleName = { creator: 'Создатель', admin: 'Админ', helper: 'Помощник', user: 'Пользователь' }[role];
+                list += `${u.nickname} (${u.username}) - ${roleName}\n`;
+            });
+            alert(list);
+        }
+
+        async function clearAllMessages() {
+            if (confirm('Удалить все сообщения?')) {
+                await supabase.from('messages').delete().neq('id', '0');
+                await loadMessages();
+                alert('Все сообщения удалены');
+            }
+        }
+
+        async function banUser() {
+            const nickname = prompt('Введите никнейм пользователя для бана:');
+            if (nickname && nickname !== 'vl1doff') {
+                await supabase.from('users').delete().eq('nickname', nickname);
+                alert(`Пользователь ${nickname} забанен`);
+            } else if (nickname === 'vl1doff') {
+                alert('❌ Нельзя забанить Создателя!');
+            }
+        }
+
+        async function clearLocalStorage() {
+            if (confirm('ПОЛНЫЙ СБРОС БД! Все данные будут удалены. Продолжить?')) {
+                await supabase.from('messages').delete().neq('id', '0');
+                await supabase.from('users').delete().neq('id', '0');
+                alert('База данных очищена');
+                logout();
+            }
+        }
+
+        async function sendSystemMessage() {
+            const text = prompt('Текст системного сообщения:');
+            if (text) {
+                await supabase.from('messages').insert([{
+                    chat_id: currentChat,
+                    user_id: 'system',
+                    user_nickname: '⚙️ Система',
+                    user_role: 'helper',
+                    text: text,
+                    created_at: new Date().toISOString()
+                }]);
+            }
+        }
+
+        async function createChannel() {
+            const name = prompt('Название канала:');
+            if (name) {
+                await supabase.from('channels').insert([{
+                    id: 'channel_' + Date.now(),
+                    name: name,
+                    description: ''
+                }]);
+                alert(`Канал "${name}" создан`);
+            }
+        }
+
+        // ========== КАНАЛЫ ==========
+        async function openChannels() {
+            const { data: channels } = await supabase.from('channels').select('*');
+            const listDiv = document.getElementById('channelsList');
+            let html = '';
+            (channels || []).forEach(ch => {
+                html += `<button onclick="switchToChannel('${ch.id}')" style="margin-bottom:8px;">📢 ${escapeHtml(ch.name)}</button>`;
+            });
+            document.getElementById('channelsList').innerHTML = html;
+            document.getElementById('channelsModal').classList.add('active');
+        }
+
+        function switchToChannel(channelId) {
+            currentChat = channelId;
+            document.getElementById('chatTitle').innerHTML = `📢 Канал <span class="online-badge">● канал</span>`;
+            loadMessages();
+            setupRealtimeSubscription();
+            closeModal('channelsModal');
+        }
+
+        function switchChat(type) {
+            if (type === 'global') {
+                currentChat = 'global';
+                document.getElementById('chatTitle').innerHTML = `💬 Общий чат <span class="online-badge">● онлайн</span>`;
+                loadMessages();
+                setupRealtimeSubscription();
+            }
+        }
+
+        // ========== ПОИСК ==========
+        function openSearch() { document.getElementById('searchModal').classList.add('active'); }
+
+        async function searchUsers() {
+            const query = document.getElementById('searchQuery').value.toLowerCase();
+            const { data } = await supabase.from('users').select('*');
+            const results = data.filter(u => u.nickname.toLowerCase().includes(query));
+            const resultsDiv = document.getElementById('searchResults');
+            if (!results.length) { resultsDiv.innerHTML = '<p>❌ Не найдено</p>'; return; }
+            resultsDiv.innerHTML = results.map(u => `<button onclick="startPrivateChat('${u.nickname}')">👤 ${escapeHtml(u.nickname)}</button>`).join('');
+        }
+
+        function startPrivateChat(nickname) {
+            currentChat = `private_${[currentUser?.nickname, nickname].sort().join('_')}`;
+            document.getElementById('chatTitle').innerHTML = `💬 Чат с ${escapeHtml(nickname)}`;
+            loadMessages();
+            setupRealtimeSubscription();
+            closeModal('searchModal');
+        }
+
+        // ========== НАСТРОЙКИ ==========
+        function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
+        function changeTheme() { theme = theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('solonet_theme', theme); applyTheme(); }
+        async function clearChat() { if (confirm('Очистить этот чат?')) { await supabase.from('messages').delete().eq('chat_id', currentChat); await loadMessages(); } }
+
+        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
+        function updateSyncStatus(text, isSuccess) { const status = document.getElementById('syncStatus'); status.textContent = text; status.style.color = isSuccess === false ? '#ff9800' : '#4caf50'; }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        // SQL для добавления колонки role (выполнить в SQL Editor)
+        function showSQLGuide() {
+            const sql = `ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';`;
+            console.log('Выполните в SQL Editor:\n', sql);
+        }
+
+        // ========== ИНИЦИАЛИЗАЦИЯ ==========
+        async function init() {
+            applyTheme();
+            
+            const savedUser = localStorage.getItem('solonet_current_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    updateUserUI();
+                    await loadMessages();
+                    setupRealtimeSubscription();
+                } catch(e) { showLoginModal(); }
+            } else { showLoginModal(); }
+            
+            document.getElementById('messageInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+            
+            // Проверка наличия колонки role
+            const { error } = await supabase.from('users').select('role').limit(1);
+            if (error && error.message.includes('column "role" does not exist')) {
+                updateSyncStatus('⚠️ Добавьте колонку role через SQL', false);
+                setTimeout(showSQLGuide, 1000);
+            } else {
+                updateSyncStatus('☁️ SoloNet v5.0', true);
+            }
+        }
+
+        init();
     </script>
 </body>
 </html>
