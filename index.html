@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SoloNet v3.1 — Облачный мессенджер</title>
+    <title>SoloNet v3.2 — Облачный мессенджер</title>
     <style>
         :root {
             --bg: #1a1a2e; --surface: #16213e; --surface2: #0f3460;
@@ -492,7 +492,7 @@
         <div class="modal-content" id="profileContent"></div>
     </div>
 
-    <div class="version-tag">SoloNet v3.1 | ⚡</div>
+    <div class="version-tag">SoloNet v3.2 | ⚡</div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -610,12 +610,12 @@
         
         // ========== О ПРИЛОЖЕНИИ ==========
         window.openAbout = function() {
-            document.getElementById('aboutContent').innerHTML = `<h2>ℹ️ О SoloNet</h2><p><b>Версия:</b> 3.1 (23 Мая 2026)</p><p><b>Разработчик:</b> vl1doff (@Devoler)</p><p><b>GitHub:</b> github.com/vl1doff/SoloNet</p><div class="rules-block"><h4>📜 Правила</h4><ul><li>🚫 Запрещён спам</li><li>🚫 Запрещены оскорбления</li><li>🚫 Запрещён контент 18+</li><li>✅ Разрешено: общение, каналы</li></ul></div><div class="rules-block"><h4>🔒 Конфиденциальность</h4><ul><li>Сообщения в облаке</li><li>Мы не собираем личные данные</li></ul></div>`;
+            document.getElementById('aboutContent').innerHTML = `<h2>ℹ️ О SoloNet</h2><p><b>Версия:</b> 3.2 (1 Июнь 2026)</p><p><b>Разработчик:</b> vl1doff (@Devoler)</p><div class="rules-block"><h4>📜 Правила</h4><ul><li>🚫 Запрещён спам</li><li>🚫 Запрещены оскорбления</li><li>🚫 Запрещён контент 18+</li><li>✅ Разрешено: общение, каналы</li></ul></div><div class="rules-block"><h4>🔒 Конфиденциальность</h4><ul><li>Сообщения в облаке</li><li>Мы не собираем личные данные</li></ul></div>`;
             window.openModal('aboutModal');
         };
         
         window.openWhatsNew = function() {
-            document.getElementById('whatsnewContent').innerHTML = `<ul style="list-style:none; padding:0;"><li style="margin-bottom:16px; padding:12px; background:var(--surface2); border-radius:10px; border-left:4px solid var(--primary);"><div style="font-weight:700; color:var(--primary);">✅ v3.1 — 23 Мая 2026</div><ul style="margin-top:6px; padding-left:20px;"><li>👑 Каналы для вспх</li><li>👨‍💻 Система Помощников</li><li>🎭 «Глюки» убранны </li><li>🪿 Фикс масштабных багов </li><li>🎉 фикс багов малых</li><li>📢 Рация (только помошник и разраб)</li><li>📊 Система жалоб</li><li>🎨 3 темы оформления</li><li>🔍 Поиск пользователей</li></li></ul></li><li style="padding:12px; background:var(--surface2); border-radius:10px; border-left:4px solid var(--primary);"><div style="font-weight:700; color:var(--primary);">🔜 v3.5 — Сентябрь 2026</div><ul style="margin-top:6px; padding-left:20px;"><li>🔗 P2P-сеть</li><li>🪙 Web3 интеграция</li></ul></li></ul>`;
+            document.getElementById('whatsnewContent').innerHTML = `<ul style="list-style:none; padding:0;"><li style="margin-bottom:16px; padding:12px; background:var(--surface2); border-radius:10px; border-left:4px solid var(--primary);"><div style="font-weight:700; color:var(--primary);">✅ v3.2 — 1 Июнь 2026</div><ul style="margin-top:6px; padding-left:20px;"><li>👑 Каналы для всех</li><li>👨‍💻 Система Помощников</li><li>🎭 «Глюки» убранны </li><li>🪿 Фикс масштабных багов </li><li>🎉 фикс багов малых</li><li>📢 Рация (только помошник и разраб)</li><li>📊 Система жалоб</li><li>🎨 3 темы оформления</li><li>🔍 Поиск пользователей</li></li></ul></li><li style="padding:12px; background:var(--surface2); border-radius:10px; border-left:4px solid var(--primary);"><div style="font-weight:700; color:var(--primary);">🔜 v3.5 — Сентябрь 2026</div><ul style="margin-top:6px; padding-left:20px;"><li>🔗 P2P-сеть</li><li>🪙 Web3 интеграция</li></ul></li></ul>`;
             window.openModal('whatsnewModal');
         };
         
